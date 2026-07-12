@@ -447,3 +447,239 @@ window.addEventListener('scroll', function() {
         });
     }
 });
+
+/* ============================================================
+   CART, CHECKOUT & PAYMENT SYSTEM
+   ============================================================ */
+var cartOpen = false;
+var cartItems = [];
+var cartCountEl = document.getElementById('cartCount');
+var cartBtn = document.getElementById('cartBtn');
+var cartSide = document.getElementById('cartSide');
+var csClose = document.getElementById('csClose');
+var csCvr = document.getElementById('csCvr');
+var csList = document.getElementById('cartList');
+var csEmpty = document.getElementById('csEmpty');
+var csFoot = document.getElementById('csFoot');
+var csSub = document.getElementById('csSub');
+var csTotal = document.getElementById('csTotal');
+var csCheck = document.getElementById('csCheck');
+
+function formatMoney(n) {
+    return '$' + n.toFixed(2);
+}
+
+function updateCartUI() {
+    var total = cartItems.reduce(function(a, b) { return a + (b.price * b.qty); }, 0);
+    var count = cartItems.reduce(function(a, b) { return a + b.qty; }, 0);
+    cartCountEl.textContent = count;
+
+    if (cartItems.length === 0) {
+        csEmpty.style.display = 'block';
+        csFoot.style.display = 'none';
+        var ex = csList.querySelectorAll('.csitem');
+        ex.forEach(function(e) { e.remove(); });
+    } else {
+        csEmpty.style.display = 'none';
+        csFoot.style.display = 'block';
+    }
+
+    var ex = csList.querySelectorAll('.csitem');
+    ex.forEach(function(e) { e.remove(); });
+    cartItems.forEach(function(item, idx) {
+        var div = document.createElement('div');
+        div.className = 'csitem';
+        div.innerHTML =
+            '<img class="csitemimg" src="' + item.img + '" alt=""/>' +
+            '<div class="csitembody">' +
+            '  <div class="csitemname">' + item.title + '</div>' +
+            '  <div class="csitemprice">' + formatMoney(item.price) + ' x ' + item.qty + '</div>' +
+            '</div>' +
+            '<div class="csqty">' +
+            '  <button class="csminus" data-i="' + idx + '">-</button>' +
+            '  <span>' + item.qty + '</span>' +
+            '  <button class="csplus" data-i="' + idx + '">+</button>' +
+            '</div>' +
+            '<button class="csremove" data-i="' + idx + '"><i class="fas fa-trash-alt"></i></button>';
+        csList.appendChild(div);
+    });
+
+    csSub.textContent = formatMoney(total);
+    csTotal.textContent = formatMoney(total);
+    document.getElementById('ckAmount').textContent = formatMoney(total);
+    document.getElementById('mobAmount').value = formatMoney(total);
+}
+
+cartBtn.addEventListener('click', function() {
+    cartOpen = !cartOpen;
+    cartSide.classList.toggle('open', cartOpen);
+    csCvr.classList.toggle('show', cartOpen);
+    document.body.style.overflow = cartOpen ? 'hidden' : '';
+});
+csClose.addEventListener('click', function() {
+    cartOpen = false;
+    cartSide.classList.remove('open');
+    csCvr.classList.remove('show');
+    document.body.style.overflow = '';
+});
+csCvr.addEventListener('click', function() {
+    cartOpen = false;
+    cartSide.classList.remove('open');
+    csCvr.classList.remove('show');
+    document.body.style.overflow = '';
+});
+
+csList.addEventListener('click', function(e) {
+    var t = e.target;
+    if (t.closest('.csplus')) {
+        var i = parseInt(t.closest('.csplus').getAttribute('data-i'));
+        cartItems[i].qty++;
+        updateCartUI();
+    } else if (t.closest('.csminus')) {
+        var i = parseInt(t.closest('.csminus').getAttribute('data-i'));
+        if (cartItems[i].qty > 1) {
+            cartItems[i].qty--;
+        } else {
+            cartItems.splice(i, 1);
+        }
+        updateCartUI();
+    } else if (t.closest('.csremove')) {
+        var i = parseInt(t.closest('.csremove').getAttribute('data-i'));
+        cartItems.splice(i, 1);
+        updateCartUI();
+    }
+});
+
+/* Override add-to-cart to use cartItems */
+document.getElementById('mpAddCart').addEventListener('click', function() {
+    var card = document.querySelector('.mcard[data-title="' + document.getElementById('mpTitle').textContent + '"]') ||
+               document.querySelector('.mcard');
+    var img = card ? (card.getAttribute('data-img') || 'img/menu/1.jpg') : 'img/menu/1.jpg';
+    var title = document.getElementById('mpTitle').textContent;
+    var price = parseFloat((card ? card.getAttribute('data-price') : '$14.99').replace('$',''));
+    var qty = parseInt(document.getElementById('mpQnum').textContent);
+    var existing = cartItems.find(function(it) { return it.title === title; });
+    if (existing) {
+        existing.qty += qty;
+    } else {
+        cartItems.push({ img: img, title: title, price: price, qty: qty });
+    }
+    updateCartUI();
+    closeMenuPop();
+    /* cart button bounce */
+    cartBtn.classList.remove('bounce');
+    void cartBtn.offsetWidth;
+    cartBtn.classList.add('bounce');
+    showMicroPopup('Item added to cart!');
+});
+
+/* Checkout modal */
+var checkoutOpen = false;
+var checkoutModal = document.getElementById('checkoutModal');
+var ckClose = document.getElementById('ckClose');
+var ckCvr = document.getElementById('ckCvr');
+var ckPay = document.getElementById('ckPay');
+
+csCheck.addEventListener('click', function() {
+    if (cartItems.length === 0) return;
+    checkoutOpen = true;
+    checkoutModal.classList.add('open');
+    ckCvr.classList.add('show');
+    document.body.style.overflow = 'hidden';
+});
+
+ckClose.addEventListener('click', closeCheckout);
+ckCvr.addEventListener('click', closeCheckout);
+
+function closeCheckout() {
+    checkoutOpen = false;
+    checkoutModal.classList.remove('open');
+    ckCvr.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+/* Payment tabs */
+document.querySelectorAll('.paytab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.paytab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.paypanel').forEach(function(p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var panel = document.getElementById('panel-' + tab.getAttribute('data-pay'));
+        panel.classList.add('active');
+    });
+});
+
+/* Pay Now */
+ckPay.addEventListener('click', function() {
+    var activeTab = document.querySelector('.paytab.active');
+    var method = activeTab ? activeTab.getAttribute('data-pay') : 'cash';
+    var btn = this;
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    setTimeout(function() {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        closeCheckout();
+        openTracking(method);
+        cartItems = [];
+        updateCartUI();
+        cartOpen = false;
+        cartSide.classList.remove('open');
+        document.body.style.overflow = '';
+    }, 2200);
+});
+
+/* Tracking modal */
+var trackModal = document.getElementById('trackModal');
+var tmClose = document.getElementById('tmClose');
+var tmCvr = document.getElementById('tmCvr');
+
+function openTracking(method) {
+    trackModal.classList.add('open');
+    tmCvr.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('tmId').textContent = Math.floor(1000 + Math.random() * 9000);
+}
+
+tmClose.addEventListener('click', function() {
+    trackModal.classList.remove('open');
+    tmCvr.classList.remove('show');
+    document.body.style.overflow = '';
+});
+tmCvr.addEventListener('click', function() {
+    trackModal.classList.remove('open');
+    tmCvr.classList.remove('show');
+    document.body.style.overflow = '';
+});
+
+document.getElementById('tmTrackBtn').addEventListener('click', function() {
+    showMicroPopup('Live tracking launched!');
+});
+
+/* Micro popup */
+function showMicroPopup(msg) {
+    var old = document.querySelector('.mpop');
+    if (old) old.remove();
+    var el = document.createElement('div');
+    el.className = 'mpop';
+    el.innerHTML = '<i class="fas fa-check-circle me-2"></i>' + msg;
+    document.body.appendChild(el);
+    setTimeout(function() { el.remove(); }, 3200);
+}
+
+/* ESC closes all */
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeSearch();
+        closeMenuPop();
+        closeGal();
+        if (checkoutOpen) closeCheckout();
+        if (trackModal.classList.contains('open')) {
+            trackModal.classList.remove('open');
+            tmCvr.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    }
+});

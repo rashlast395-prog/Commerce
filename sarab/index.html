@@ -1210,7 +1210,206 @@
          </div>
       </footer>
       <!-- Floating cart -->
-      <!-- <div class="cartfl"><i class="fas fa-shopping-cart"></i><span>My Cart</span><div class="ccount" id="cartCount">0</div></div> -->
+      <div class="cartfl" id="cartBtn"><i class="fas fa-shopping-cart"></i><span>My Cart</span><div class="ccount" id="cartCount">0</div></div>
+      <!-- Cart Sidebar -->
+      <div id="cartSide">
+         <div class="cshead">
+            <h4><i class="fas fa-shopping-bag me-2"></i>Your Order</h4>
+            <button class="csclose" id="csClose"><i class="fas fa-times"></i></button>
+         </div>
+         <div class="cslist" id="cartList">
+            <div class="csempty" id="csEmpty">
+               <i class="fas fa-basket-shopping"></i>
+               <p>Your cart is empty</p>
+               <span>Add delicious items from our menu</span>
+            </div>
+         </div>
+         <div class="csfoot" id="csFoot" style="display:none;">
+            <div class="csrow"><span>Subtotal</span><span id="csSub">$0.00</span></div>
+            <div class="csrow"><span>Delivery</span><span style="color:#4ade80;font-weight:600;">Free</span></div>
+            <div class="csrow total"><span>Total</span><span id="csTotal">$0.00</span></div>
+            <button class="cscheck" id="csCheck"><i class="fas fa-lock me-1"></i>Checkout & Pay</button>
+         </div>
+      </div>
+      <div class="cscvr" id="csCvr"></div>
+      <!-- Checkout / Payment Modal -->
+      <div id="checkoutModal">
+         <div class="ckbox">
+            <button class="ckclose" id="ckClose"><i class="fas fa-times"></i></button>
+            <div class="ckhead">
+               <h3>Secure Checkout</h3>
+               <p>Choose your preferred payment method</p>
+            </div>
+            <!-- Payment Tabs -->
+            <div class="paysel">
+               <button class="paytab active" data-pay="mobile"><i class="fas fa-mobile-alt"></i><span>Mobile Money</span></button>
+               <button class="paytab" data-pay="bank"><i class="fas fa-university"></i><span>Bank Transfer</span></button>
+               <button class="paytab" data-pay="card"><i class="fas fa-credit-card"></i><span>Card</span></button>
+               <button class="paytab" data-pay="cash"><i class="fas fa-money-bill-wave"></i><span>Cash on Delivery</span></button>
+            </div>
+            <div class="paybody">
+               <div class="paypanel active" id="panel-mobile">
+                  <h5><i class="fas fa-mobile-alt me-2" style="color:var(--primary);"></i>Mobile Money Payment</h5>
+                  <p class="paynote">Pay securely using your mobile money account. We support all major providers.</p>
+                  <div class="mobmethods">
+                     <label class="mobopt">
+                        <input type="radio" name="mob" value="mpesa" checked/>
+                        <div class="mobcard">
+                           <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/512px-M-PESA_LOGO-01.svg.png" alt="M-Pesa" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+                           <div class="mobfall"><i class="fas fa-mobile-alt"></i>M-Pesa</div>
+                        </div>
+                     </label>
+                     <label class="mobopt">
+                        <input type="radio" name="mob" value="mtn"/>
+                        <div class="mobcard">
+                           <div class="mobfall"><i class="fas fa-mobile-alt"></i>MTN MoMo</div>
+                        </div>
+                     </label>
+                     <label class="mobopt">
+                        <input type="radio" name="mob" value="airtel"/>
+                        <div class="mobcard">
+                           <div class="mobfall"><i class="fas fa-mobile-alt"></i>Airtel Money</div>
+                        </div>
+                     </label>
+                     <label class="mobopt">
+                        <input type="radio" name="mob" value="orange"/>
+                        <div class="mobcard">
+                           <div class="mobfall"><i class="fas fa-mobile-alt"></i>Orange Money</div>
+                        </div>
+                     </label>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol full">
+                        <label class="flbl">Phone Number</label>
+                        <input type="tel" class="fctrl" placeholder="+1 (800) 000-0000" id="mobPhone"/>
+                     </div>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol">
+                        <label class="flbl">Amount</label>
+                        <input type="text" class="fctrl" id="mobAmount" readonly/>
+                     </div>
+                     <div class="formcol">
+                        <label class="flbl">PIN</label>
+                        <input type="password" class="fctrl" placeholder="****" maxlength="4" id="mobPin"/>
+                     </div>
+                  </div>
+               </div>
+               <div class="paypanel" id="panel-bank">
+                  <h5><i class="fas fa-university me-2" style="color:var(--primary);"></i>Bank Transfer</h5>
+                  <p class="paynote">Transfer directly to our corporate account.</p>
+                  <div class="bankcard">
+                     <h6><i class="fas fa-building-columns me-2"></i>Bank Details</h6>
+                     <div class="bankrow"><span>Bank</span><strong>First National Bank</strong></div>
+                     <div class="bankrow"><span>Account Name</span><strong>Sarab Restaurant Ltd</strong></div>
+                     <div class="bankrow"><span>Account Number</span><strong>9876 5432 1098</strong></div>
+                     <div class="bankrow"><span>Routing Number</span><strong>021000021</strong></div>
+                     <div class="bankrow"><span>SWIFT / BIC</span><strong>FNDBUS33</strong></div>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol full">
+                        <label class="flbl">Transaction Reference</label>
+                        <input type="text" class="fctrl" placeholder="e.g. TRX-123456" id="bankRef"/>
+                     </div>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol full">
+                        <label class="flbl">Sender Full Name</label>
+                        <input type="text" class="fctrl" placeholder="John Doe" id="bankName"/>
+                     </div>
+                  </div>
+               </div>
+               <div class="paypanel" id="panel-card">
+                  <h5><i class="fas fa-credit-card me-2" style="color:var(--primary);"></i>Credit / Debit Card</h5>
+                  <p class="paynote">Pay with Visa, Mastercard, or American Express.</p>
+                  <div class="cardtypes">
+                     <i class="fab fa-cc-visa"></i>
+                     <i class="fab fa-cc-mastercard"></i>
+                     <i class="fab fa-cc-amex"></i>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol full">
+                        <label class="flbl">Card Number</label>
+                        <input type="text" class="fctrl" placeholder="1234 5678 9012 3456" maxlength="19" id="cardNum"/>
+                     </div>
+                  </div>
+                  <div class="formrow two">
+                     <div class="formcol">
+                        <label class="flbl">Expiry Date</label>
+                        <input type="text" class="fctrl" placeholder="MM/YY" maxlength="5" id="cardExp"/>
+                     </div>
+                     <div class="formcol">
+                        <label class="flbl">CVV</label>
+                        <input type="password" class="fctrl" placeholder="***" maxlength="3" id="cardCvv"/>
+                     </div>
+                  </div>
+                  <div class="formrow">
+                     <div class="formcol full">
+                        <label class="flbl">Cardholder Name</label>
+                        <input type="text" class="fctrl" placeholder="Name on card" id="cardName"/>
+                     </div>
+                  </div>
+               </div>
+               <div class="paypanel" id="panel-cash">
+                  <h5><i class="fas fa-money-bill-wave me-2" style="color:var(--primary);"></i>Cash on Delivery</h5>
+                  <p class="paynote">Pay with cash when your order arrives. No advance payment needed.</p>
+                  <div class="cashnotice">
+                     <i class="fas fa-shield-halved"></i>
+                     <div>
+                        <strong>No online payment required</strong>
+                        <p>Simply pay the delivery person in cash when your food arrives. Please have exact change ready.</p>
+                     </div>
+                  </div>
+                     <div class="formrow">
+                        <div class="formcol full">
+                           <label class="flbl">Delivery Address</label>
+                           <input type="text" class="fctrl" placeholder="42 Flavor Street, Manhattan, NY" id="cashAddr"/>
+                        </div>
+                     </div>
+                     <div class="formrow">
+                        <div class="formcol full">
+                           <label class="flbl">Delivery Instructions (optional)</label>
+                           <textarea class="fctrl" rows="2" placeholder="Landmark, gate code, etc." id="cashNotes"></textarea>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+            <div class="ckfoot">
+               <div class="cktotal">
+                  <span>Total Amount</span>
+                  <strong id="ckAmount">$0.00</strong>
+               </div>
+               <button class="ckpay" id="ckPay"><i class="fas fa-lock me-1"></i>Pay Now</button>
+            </div>
+         </div>
+      </div>
+      <div class="paycvr" id="ckCvr"></div>
+      <!-- Order Tracking Modal -->
+      <div id="trackModal">
+         <div class="tmbox">
+            <button class="ckclose" id="tmClose"><i class="fas fa-times"></i></button>
+            <div class="tmhead">
+               <div class="tmic"><i class="fas fa-utensils"></i></div>
+               <h3>Order Confirmed!</h3>
+               <p class="tmorder" id="tmOrder">Order #SB-<span id="tmId">1042</span></p>
+            </div>
+            <div class="tmsteps">
+               <div class="tmdone"><div class="tmdot"><i class="fas fa-check"></i></div><span>Order Received</span></div>
+               <div class="tmdone"><div class="tmdot"><i class="fas fa-check"></i></div><span>Preparing</span></div>
+               <div class="tmprogress"><div class="tmline"></div><div class="tmdot" id="tmOut"><i class="fas fa-motorcycle"></i></div></div>
+               <div><div class="tmdot"><span>3</span></div><span>Out for Delivery</span></div>
+               <div><div class="tmdot"><span>4</span></div><span>Delivered</span></div>
+            </div>
+            <div class="tminfo">
+               <div class="tmirow"><i class="fas fa-clock"></i><span>Est. Delivery: <strong>25-35 min</strong></span></div>
+               <div class="tmirow"><i class="fas fa-route"></i><span>Distance: <strong>2.4 km</strong></span></div>
+               <div class="tmirow"><i class="fas fa-user"></i><span>Driver: <strong>Mike R.</strong></span></div>
+            </div>
+            <button class="ckpay" id="tmTrackBtn"><i class="fas fa-map-marker-alt me-1"></i>Track Live</button>
+         </div>
+      </div>
+      <div class="paycvr" id="tmCvr"></div>
       <!-- Back to top -->
       <button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
     
