@@ -658,7 +658,76 @@ document.getElementById('tmTrackBtn').addEventListener('click', function() {
     showMicroPopup('Live tracking launched!');
 });
 
-/* Micro popup */
+/* ============================================================
+   POPULAR NOW – QUICK ADD TO CART
+   ============================================================ */
+document.querySelectorAll('.psadd').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var card = this.closest('.pscard');
+        var title = card.getAttribute('data-title');
+        var price = parseFloat(card.getAttribute('data-price'));
+        var img = card.getAttribute('data-img');
+        var existing = cartItems.find(function(it) { return it.title === title; });
+        if (existing) {
+            existing.qty++;
+        } else {
+            cartItems.push({ img: img, title: title, price: price, qty: 1 });
+        }
+        updateCartUI();
+        cartBtn.classList.remove('bounce');
+        void cartBtn.offsetWidth;
+        cartBtn.classList.add('bounce');
+        showMicroPopup('Item added to cart!');
+    });
+});
+
+/* ============================================================
+   DEALS & BUNDLES – QUICK ADD TO CART
+   ============================================================ */
+document.querySelectorAll('.dealadd').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var title = this.getAttribute('data-title');
+        var price = parseFloat(this.getAttribute('data-price'));
+        var img = this.getAttribute('data-img');
+        var existing = cartItems.find(function(it) { return it.title === title; });
+        if (existing) {
+            existing.qty++;
+        } else {
+            cartItems.push({ img: img, title: title, price: price, qty: 1 });
+        }
+        updateCartUI();
+        cartBtn.classList.remove('bounce');
+        void cartBtn.offsetWidth;
+        cartBtn.classList.add('bounce');
+        showMicroPopup('Combo added to cart!');
+    });
+});
+
+/* ============================================================
+   POPULAR NOW HORIZONTAL SCROLL BUTTONS
+   ============================================================ */
+(function() {
+    var scrollWrap = document.querySelector('.pscroll');
+    if (!scrollWrap) return;
+    var nav = document.createElement('div');
+    nav.className = 'psnav';
+    nav.innerHTML = '<button class="psnavbtn" id="psPrev"><i class="fas fa-chevron-left"></i></button>' +
+                    '<button class="psnavbtn" id="psNext"><i class="fas fa-chevron-right"></i></button>';
+    scrollWrap.parentNode.insertBefore(nav, scrollWrap.nextSibling);
+
+    document.getElementById('psPrev').addEventListener('click', function() {
+        scrollWrap.scrollBy({ left: -260, behavior: 'smooth' });
+    });
+    document.getElementById('psNext').addEventListener('click', function() {
+        scrollWrap.scrollBy({ left: 260, behavior: 'smooth' });
+    });
+})();
+
+/* ============================================================
+   MICRO POPUP
+   ============================================================ */
 function showMicroPopup(msg) {
     var old = document.querySelector('.mpop');
     if (old) old.remove();
