@@ -79,10 +79,22 @@
                </div>
             </div>
          </div>
-      </nav>
-      <!-- ============================================================
-         FIX 1 � SEARCH OVERLAY POPUP
-         ============================================================ -->
+       </nav>
+       <!-- Breadcrumbs -->
+       <div class="breadcrumb-wrap">
+          <div class="container">
+             <nav aria-label="breadcrumb">
+                <ol class="breadcrumb" id="bcList">
+                   <li class="breadcrumb-item"><a href="#hero"><i class="fas fa-home me-1"></i>Home</a></li>
+                   <li class="breadcrumb-item"><a href="#menu">Menu</a></li>
+                   <li class="breadcrumb-item active" aria-current="page" id="bcCurrent">All Items</li>
+                </ol>
+             </nav>
+          </div>
+       </div>
+       <!-- ============================================================
+          SEARCH OVERLAY POPUP
+          ============================================================ -->
       <div id="searchOv">
          <button class="sovclose" id="searchClose"><i class="fas fa-times"></i></button>
          <div class="sovbox">
@@ -571,16 +583,32 @@
                          <div class="psstars"><i class="fas fa-star"></i> 4.9 (88)</div>
                          <div class="psprice">$16.99</div>
                          <button class="psadd" title="Add to Cart"><i class="fas fa-plus"></i> Add</button>
-                      </div>
-                   </div>
-                </div>
-             </div>
+                       </div>
+                 </div>
+                 </div>
+              </div>
           </div>
-       </section>
+        </section>
 
-       <!-- ============================================================
-          DEALS & BUNDLES
-          ============================================================ -->
+        <!-- ============================================================
+           RECENTLY VIEWED
+           ============================================================ -->
+        <section id="recently" style="display:none;">
+           <div class="container">
+              <div class="text-center mb-4" data-aos="fade-up">
+                 <span class="slbl">Keep Exploring</span>
+                 <h2 class="stitle">Recently <span>Viewed</span></h2>
+                 <div class="sline"></div>
+              </div>
+              <div class="rscroll" data-aos="fade-up">
+                 <div class="rtrack" id="rTrack"></div>
+              </div>
+           </div>
+        </section>
+
+        <!-- ============================================================
+           DEALS & BUNDLES
+           ============================================================ -->
        <section id="deals">
           <div class="container">
              <div class="text-center mb-5" data-aos="fade-up">
@@ -654,19 +682,74 @@
                <div id="mpDesc"></div>
                <div id="mpPrice"></div>
                <div class="mpmeta" id="mpMeta"></div>
-               <div class="mpqty">
-                  <button class="mpqbtn" id="mpMinus">-</button>
-                  <span class="mpqnum" id="mpQnum">1</span>
-                  <button class="mpqbtn" id="mpPlus">+</button>
-                  <span style="font-size:.82rem;color:#aaa;margin-left:9px;">portion</span>
-               </div>
-               <div class="mptags" id="mpTags"></div>
-               <button class="mpaddcart" id="mpAddCart"><i class="fas fa-shopping-cart"></i>Add to Cart</button>
-            </div>
-         </div>
-</div>
+             <div class="mpqty">
+                   <button class="mpqbtn" id="mpMinus">-</button>
+                   <span class="mpqnum" id="mpQnum">1</span>
+                   <button class="mpqbtn" id="mpPlus">+</button>
+                   <span style="font-size:.82rem;color:#aaa;margin-left:9px;">portion</span>
+                </div>
+              <div class="mptags" id="mpTags"></div>
+              <div class="mpnutrition" id="mpNutrition" style="display:none;">
+                 <div class="mpnuttitle"><i class="fas fa-chart-pie me-1"></i>Nutritional Info</div>
+                 <div class="mpnutgrid" id="mpNutGrid"></div>
+              </div>
+              <div class="mprev" id="mpRev">
+                 <div class="mprevhdr"><i class="fas fa-star me-1"></i>Reviews <span id="mpRevCount">(0)</span></div>
+                 <div class="mprevlist" id="mpRevList"></div>
+                 <div class="mprevadd">
+                    <div class="mprevstars" id="mpRevStars">
+                       <button class="mprevstar" data-v="1"><i class="far fa-star"></i></button>
+                       <button class="mprevstar" data-v="2"><i class="far fa-star"></i></button>
+                       <button class="mprevstar" data-v="3"><i class="far fa-star"></i></button>
+                       <button class="mprevstar" data-v="4"><i class="far fa-star"></i></button>
+                       <button class="mprevstar" data-v="5"><i class="far fa-star"></i></button>
+                    </div>
+                    <input type="text" class="mprevname" id="mpRevName" placeholder="Your name"/>
+                    <textarea class="mprevbody" id="mpRevBody" rows="2" placeholder="Write your review..."></textarea>
+                    <button class="mprevbtn" id="mpRevBtn"><i class="fas fa-paper-plane me-1"></i>Submit Review</button>
+                 </div>
+              </div>
+             <div class="mpopts" id="mpOpts">
+                 <div class="mpoptgrp">
+                    <label class="mplbl">Size</label>
+                    <div class="mpoptsel" id="mpSize">
+                       <button class="mpopt active" data-v="Regular" data-p="0">Regular</button>
+                       <button class="mpopt" data-v="Large" data-p="3">Large +$3</button>
+                       <button class="mpopt" data-v="X-Large" data-p="5">X-Large +$5</button>
+                    </div>
+                 </div>
+                 <div class="mpoptgrp">
+                    <label class="mplbl">Spice Level</label>
+                    <div class="mpoptsel" id="mpSpice">
+                       <button class="mpopt active" data-v="Mild">Mild</button>
+                       <button class="mpopt" data-v="Medium">Medium</button>
+                       <button class="mpopt hot" data-v="Hot">Hot</button>
+                       <button class="mpopt fire" data-v="Extra Hot">Extra Hot</button>
+                    </div>
+                 </div>
+                 <div class="mpoptgrp">
+                    <label class="mplbl">Extras</label>
+                    <div class="mpoptsel" id="mpExtras">
+                       <button class="mpopt ex" data-v="Extra Cheese" data-p="2">Extra Cheese +$2</button>
+                       <button class="mpopt ex" data-v="Bacon" data-p="2.5">Bacon +$2.50</button>
+                       <button class="mpopt ex" data-v="Avocado" data-p="1.5">Avocado +$1.50</button>
+                       <button class="mpopt ex" data-v="Jalapeños" data-p="1">Jalapeños +$1</button>
+                    </div>
+                 </div>
+              </div>
+              <div class="mpgallery" id="mpGallery" style="display:none;">
+                 <div class="mpgalrow">
+                    <div class="mpgalimg active" data-gimg="img/menu/1.jpg"><img src="img/menu/1.jpg" alt=""/></div>
+                    <div class="mpgalimg" data-gimg="img/menu/2.jpg"><img src="img/menu/2.jpg" alt=""/></div>
+                    <div class="mpgalimg" data-gimg="img/menu/3.jpg"><img src="img/menu/3.jpg" alt=""/></div>
+                    <div class="mpgalimg" data-gimg="img/menu/4.jpg"><img src="img/menu/4.jpg" alt=""/></div>
+                 </div>
+              </div>
+             <button class="mpaddcart" id="mpAddCart"><i class="fas fa-shopping-cart"></i>Add to Cart</button>
+             </div>
+          </div>
        </div>
-       <!-- FREE DELIVERY BADGE -->
+        <!-- FREE DELIVERY BADGE -->
        <div class="delbadge">
           <i class="fas fa-truck-fast"></i>
           Free delivery on all orders over <strong>$30</strong>! <span style="margin-left:8px;opacity:0.8;">Fast delivery in 25-35 min</span>
@@ -1279,9 +1362,33 @@
                </div>
             </div>
          </div>
-      </section>
-	  
-      <!-- FOOTER -->
+       </section>
+
+       <!-- Trust Badges -->
+       <div class="trustsec">
+          <div class="container">
+             <div class="trustgrid">
+                <div class="trustitem">
+                   <div class="trustico"><i class="fas fa-shield-alt"></i></div>
+                   <div class="trusttxt"><strong>Secure Payment</strong><small>SSL Encrypted</small></div>
+                </div>
+                <div class="trustitem">
+                   <div class="trustico"><i class="fas fa-truck-fast"></i></div>
+                   <div class="trusttxt"><strong>Free Delivery</strong><small>Orders over $30</small></div>
+                </div>
+                <div class="trustitem">
+                   <div class="trustico"><i class="fas fa-undo-alt"></i></div>
+                   <div class="trusttxt"><strong>Easy Returns</strong><small>30 Day Policy</small></div>
+                </div>
+                <div class="trustitem">
+                   <div class="trustico"><i class="fas fa-headset"></i></div>
+                   <div class="trusttxt"><strong>24/7 Support</strong><small>Live Chat</small></div>
+                </div>
+             </div>
+          </div>
+       </div>
+
+       <!-- FOOTER -->
       <footer>
          <div class="container">
             <div class="row g-5">
@@ -1302,9 +1409,10 @@
                      <li><a href="#hero"><i class="fas fa-chevron-right"></i>Home</a></li>
                      <li><a href="#about"><i class="fas fa-chevron-right"></i>About Us</a></li>
                      <li><a href="#menu"><i class="fas fa-chevron-right"></i>Our Menu</a></li>
-                     <li><a href="#reservation"><i class="fas fa-chevron-right"></i>Reservation</a></li>
-                     <li><a href="#blog"><i class="fas fa-chevron-right"></i>Blog</a></li>
-                     <li><a href="#contact-section"><i class="fas fa-chevron-right"></i>Contact</a></li>
+                      <li><a href="#reservation"><i class="fas fa-chevron-right"></i>Reservation</a></li>
+                      <li><a href="#" id="footerOrders"><i class="fas fa-receipt"></i>My Orders</a></li>
+                      <li><a href="#blog"><i class="fas fa-chevron-right"></i>Blog</a></li>
+                      <li><a href="#contact-section"><i class="fas fa-chevron-right"></i>Contact</a></li>
                   </ul>
                </div>
                <div class="col-sm-6 col-lg-2">
@@ -1366,33 +1474,96 @@
                 <p>Your cart is empty</p>
                 <span>Add delicious items from our menu</span>
              </div>
-          </div>
-         <div class="csfoot" id="csFoot" style="display:none;">
-            <div class="csrow"><span>Subtotal</span><span id="csSub">$0.00</span></div>
-            <div class="csrow"><span>Delivery</span><span style="color:#4ade80;font-weight:600;">Free</span></div>
-            <div class="csrow total"><span>Total</span><span id="csTotal">$0.00</span></div>
-            <button class="cscheck" id="csCheck"><i class="fas fa-lock me-1"></i>Checkout & Pay</button>
-         </div>
+             <div class="cspromo" id="csPromo" style="display:none;">
+                <div class="csprow">
+                   <input type="text" id="promoInput" placeholder="Promo code" class="csproinp"/>
+                   <button class="csprobtn" id="promoBtn">Apply</button>
+                </div>
+                <div class="cspmsg" id="promoMsg"></div>
+                <div class="cspdiscount" id="promoDiscount" style="display:none;">
+                   <span><i class="fas fa-tag me-1"></i><span id="promoCodeLabel"></span></span>
+                   <span id="promoSave">-$0.00</span>
+                </div>
+             </div>
+             <div class="csfreedel" id="csFreeDel">
+                <div class="csfdbg"><div class="csfdprog" id="csfdProg"></div></div>
+                <div class="csfdinfo"><span id="csfdTxt">Add <strong>$30.00</strong> more for free delivery!</span></div>
+             </div>
+           </div>
+          <div class="csfoot" id="csFoot" style="display:none;">
+             <div class="csrow"><span>Subtotal</span><span id="csSub">$0.00</span></div>
+             <div class="csrow csdiscount" id="csDiscRow" style="display:none;"><span>Discount</span><span id="csDisc" style="color:#4ade80;font-weight:600;">-$0.00</span></div>
+             <div class="csrow"><span>Delivery</span><span style="color:#4ade80;font-weight:600;" id="csDeliv">Free</span></div>
+             <div class="csrow total"><span>Total</span><span id="csTotal">$0.00</span></div>
+              <button class="cscheck" id="csCheck"><i class="fas fa-lock me-1"></i>Checkout & Pay</button>
+              <button class="csorders" id="csOrders" style="display:none;background:none;border:none;color:var(--primary);font-size:.82rem;font-weight:600;cursor:pointer;padding:8px;margin-top:4px;font-family:&quot;Poppins&quot;,sans-serif;width:100%;text-align:center;transition:0.3s;"><i class="fas fa-receipt me-1"></i>My Orders</button>
+           </div>
       </div>
       <div class="cscvr" id="csCvr"></div>
       <!-- Checkout / Payment Modal -->
       <div id="checkoutModal">
          <div class="ckbox">
             <button class="ckclose" id="ckClose"><i class="fas fa-times"></i></button>
-            <div class="ckhead">
-               <h3>Secure Checkout</h3>
-               <p>Choose your preferred payment method</p>
-            </div>
-            <!-- Payment Tabs -->
+             <div class="ckhead">
+                <h3>Secure Checkout</h3>
+                <p>Choose your preferred payment method</p>
+             </div>
+             <div class="cksummary" id="ckSummary">
+                <div class="cksumhdr"><i class="fas fa-receipt me-2"></i>Order Summary</div>
+                <div class="cksumlist" id="ckSumList"></div>
+                <div class="cksumsub"><span>Subtotal</span><span id="ckSub">$0.00</span></div>
+                <div class="cksumdisc" id="ckSumDisc" style="display:none;"><span>Discount</span><span id="ckDiscAmt">-$0.00</span></div>
+                <div class="cksumdel"><span>Delivery</span><span style="color:#4ade80;font-weight:600;">Free</span></div>
+                <div class="cksumtotal"><span>Total</span><strong id="ckTotal">$0.00</strong></div>
+              </div>
+              <div class="ckaddress" id="ckAddress">
+                 <div class="ckaddhdr"><i class="fas fa-map-marker-alt me-2"></i>Delivery Address</div>
+                 <div class="ckaddlist" id="ckAddList"></div>
+                 <div class="ckaddform" id="ckAddForm" style="display:none;">
+                    <input type="text" class="fctrl ckaddinp" id="addAddr" placeholder="Street address"/>
+                    <input type="text" class="fctrl ckaddinp" id="addCity" placeholder="City"/>
+                    <input type="text" class="fctrl ckaddinp" id="addZip" placeholder="Zip code"/>
+                    <div class="d-flex gap-2">
+                       <button class="cksaveaddr" id="addSave"><i class="fas fa-save me-1"></i>Save</button>
+                       <button class="ckcanceladdr" id="addCancel">Cancel</button>
+                    </div>
+                 </div>
+                 <button class="ckaddnew" id="addNew"><i class="fas fa-plus me-1"></i>Add New Address</button>
+              </div>
+              <!-- Payment Tabs -->
             <div class="paysel">
                <button class="paytab active" data-pay="mobile"><i class="fas fa-mobile-alt"></i><span>Mobile Money</span></button>
                <button class="paytab" data-pay="bank"><i class="fas fa-university"></i><span>Bank Transfer</span></button>
                <button class="paytab" data-pay="card"><i class="fas fa-credit-card"></i><span>Card</span></button>
                <button class="paytab" data-pay="cash"><i class="fas fa-money-bill-wave"></i><span>Cash on Delivery</span></button>
             </div>
-            <div class="paybody">
-               <div class="paypanel active" id="panel-mobile">
-                  <h5><i class="fas fa-mobile-alt me-2" style="color:var(--primary);"></i>Mobile Money Payment</h5>
+                   <div class="paybody">
+                <div class="paypanel active" id="panel-mobile">
+                   <div class="formrow">
+                      <div class="formcol full">
+                         <label class="flbl">Delivery Time</label>
+                         <select class="fctrl" id="delTime">
+                            <option value="ASAP">ASAP (25-35 min)</option>
+                            <option value="60">In 1 hour</option>
+                            <option value="90">In 1.5 hours</option>
+                            <option value="120">In 2 hours</option>
+                            <option value="schedule">Schedule for later</option>
+                         </select>
+                      </div>
+                   </div>
+                   <div class="formrow" id="schedRow" style="display:none;">
+                      <div class="formcol full">
+                         <label class="flbl">Choose Date & Time</label>
+                         <input type="datetime-local" class="fctrl" id="schedTime"/>
+                      </div>
+                   </div>
+                   <div class="order-note-row">
+                      <div class="formcol full">
+                         <label class="flbl">Order Notes (optional)</label>
+                         <textarea class="fctrl" rows="2" placeholder="Special instructions, allergies, etc." id="orderNotes"></textarea>
+                      </div>
+                   </div>
+                   <h5><i class="fas fa-mobile-alt me-2" style="color:var(--primary);"></i>Mobile Money Payment</h5>
                   <p class="paynote">Pay securely using your mobile money account. We support all major providers.</p>
                   <div class="mobmethods">
                      <label class="mobopt">
@@ -1438,8 +1609,14 @@
                      </div>
                   </div>
                </div>
-               <div class="paypanel" id="panel-bank">
-                  <h5><i class="fas fa-university me-2" style="color:var(--primary);"></i>Bank Transfer</h5>
+                <div class="paypanel" id="panel-bank">
+                   <div class="order-note-row">
+                      <div class="formcol full">
+                         <label class="flbl">Order Notes (optional)</label>
+                         <textarea class="fctrl" rows="2" placeholder="Special instructions, allergies, etc." id="orderNotes2"></textarea>
+                      </div>
+                   </div>
+                   <h5><i class="fas fa-university me-2" style="color:var(--primary);"></i>Bank Transfer</h5>
                   <p class="paynote">Transfer directly to our corporate account.</p>
                   <div class="bankcard">
                      <h6><i class="fas fa-building-columns me-2"></i>Bank Details</h6>
@@ -1462,8 +1639,14 @@
                      </div>
                   </div>
                </div>
-               <div class="paypanel" id="panel-card">
-                  <h5><i class="fas fa-credit-card me-2" style="color:var(--primary);"></i>Credit / Debit Card</h5>
+                <div class="paypanel" id="panel-card">
+                   <div class="order-note-row">
+                      <div class="formcol full">
+                         <label class="flbl">Order Notes (optional)</label>
+                         <textarea class="fctrl" rows="2" placeholder="Special instructions, allergies, etc." id="orderNotes3"></textarea>
+                      </div>
+                   </div>
+                   <h5><i class="fas fa-credit-card me-2" style="color:var(--primary);"></i>Credit / Debit Card</h5>
                   <p class="paynote">Pay with Visa, Mastercard, or American Express.</p>
                   <div class="cardtypes">
                      <i class="fab fa-cc-visa"></i>
@@ -1493,8 +1676,14 @@
                      </div>
                   </div>
                </div>
-               <div class="paypanel" id="panel-cash">
-                  <h5><i class="fas fa-money-bill-wave me-2" style="color:var(--primary);"></i>Cash on Delivery</h5>
+                <div class="paypanel" id="panel-cash">
+                   <div class="order-note-row" id="orderNoteRowCash">
+                      <div class="formcol full">
+                         <label class="flbl">Order Notes (optional)</label>
+                         <textarea class="fctrl" rows="2" placeholder="Special instructions, allergies, etc." id="orderNotes4"></textarea>
+                      </div>
+                   </div>
+                   <h5><i class="fas fa-money-bill-wave me-2" style="color:var(--primary);"></i>Cash on Delivery</h5>
                   <p class="paynote">Pay with cash when your order arrives. No advance payment needed.</p>
                   <div class="cashnotice">
                      <i class="fas fa-shield-halved"></i>
@@ -1516,19 +1705,20 @@
                         </div>
                      </div>
                   </div>
-               </div>
             </div>
-            <div class="ckfoot">
-               <div class="cktotal">
-                  <span>Total Amount</span>
-                  <strong id="ckAmount">$0.00</strong>
-               </div>
-               <button class="ckpay" id="ckPay"><i class="fas fa-lock me-1"></i>Pay Now</button>
-            </div>
+             <div class="ckfoot">
+                <div class="cktotal">
+                   <span>Total Amount</span>
+                   <strong id="ckAmount">$0.00</strong>
+                   <span class="cksave" id="ckSave" style="display:none;color:var(--green);font-size:.78rem;"><i class="fas fa-tag me-1"></i>You save <span id="ckSaveAmt">$0.00</span></span>
+                </div>
+                <button class="ckpay" id="ckPay"><i class="fas fa-lock me-1"></i>Pay Now</button>
+             </div>
          </div>
       </div>
-      <div class="paycvr" id="ckCvr"></div>
-      <!-- Order Tracking Modal -->
+       <div class="paycvr" id="ckCvr"></div>
+       <div id="toastContainer"></div>
+       <!-- Order Tracking Modal -->
       <div id="trackModal">
          <div class="tmbox">
             <button class="ckclose" id="tmClose"><i class="fas fa-times"></i></button>
@@ -1554,9 +1744,35 @@
       </div>
       <div class="paycvr" id="tmCvr"></div>
       <!-- Back to top -->
-      <button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
-    
-	<!-- jQuery -->
+       <button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
+
+       <!-- Live Chat Widget -->
+       <div class="livechat" id="liveChatWidget">
+          <div class="lcbtn" id="lcToggle"><i class="fas fa-comment-dots"></i><span>Chat with us</span></div>
+          <div class="lcbox" id="lcBox" style="display:none;">
+             <div class="lchead">
+                <div class="lchdr"><i class="fas fa-utensils me-2"></i>Yussif Support</div>
+                <button class="lcclose" id="lcClose"><i class="fas fa-times"></i></button>
+             </div>
+             <div class="lcmessages" id="lcMessages"></div>
+             <div class="lcinputrow">
+                <input type="text" class="lcinput" id="lcInput" placeholder="Type a message..."/>
+                <button class="lcsend" id="lcSend"><i class="fas fa-paper-plane"></i></button>
+             </div>
+          </div>
+       </div>
+
+       <!-- Order History Modal -->
+       <div id="orderHistoryModal">
+          <div class="ohbox">
+             <button class="ohclose" id="ohClose"><i class="fas fa-times"></i></button>
+             <div class="ohhead"><i class="fas fa-receipt me-2"></i>Order History</div>
+             <div class="ohlist" id="ohList"></div>
+          </div>
+       </div>
+       <div class="paycvr" id="ohCvr"></div>
+
+       <!-- jQuery -->
       <script src="js/jquery-3.7.1.min.js"></script>
       <!-- Bootstrap 5 -->
       <script src="js/bootstrap.bundle.min.js"></script>

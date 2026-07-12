@@ -3359,11 +3359,123 @@ footer {
   gap: 6px;
 }
 .psadd:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(232,40,26,0.35);
+   transform: translateY(-2px);
+   box-shadow: 0 6px 18px rgba(232,40,26,0.35);
 }
 
-/* ===================== DEALS & BUNDLES ===================== */
+/* ===================== SOCAIL PROOF TOAST ===================== */
+.toast.social {
+   border-left-color: var(--secondary);
+   background: linear-gradient(135deg, #fff, #fff8f0);
+}
+.toast.social i {
+   color: var(--secondary);
+}
+
+/* ===================== CART ORDER HISTORY BUTTON ===================== */
+.csorders {
+   margin-top: 6px;
+   border-top: 1px solid #eee;
+   padding-top: 10px;
+}
+.csorders:hover {
+   color: var(--dark) !important;
+}
+
+/* ===================== RECENTLY VIEWED ===================== */
+#recently {
+   background: #fff;
+}
+.rscroll {
+   overflow-x: auto;
+   padding-bottom: 18px;
+   scrollbar-width: thin;
+   scrollbar-color: var(--primary) #f2f2f2;
+}
+.rscroll::-webkit-scrollbar {
+   height: 5px;
+}
+.rscroll::-webkit-scrollbar-thumb {
+   background: var(--primary);
+   border-radius: 10px;
+}
+.rscroll::-webkit-scrollbar-track {
+   background: #f2f2f2;
+   border-radius: 10px;
+}
+.rtrack {
+   display: flex;
+   gap: 18px;
+   min-width: max-content;
+}
+.rcard {
+   width: 220px;
+   background: var(--cream);
+   border-radius: 18px;
+   overflow: hidden;
+   flex-shrink: 0;
+   transition: 0.3s;
+   cursor: pointer;
+   border: 2px solid transparent;
+}
+.rcard:hover {
+   transform: translateY(-6px);
+   box-shadow: var(--shadow);
+   border-color: var(--primary);
+}
+.rcard .rimg {
+   position: relative;
+   height: 150px;
+   overflow: hidden;
+   background: var(--cream2);
+}
+.rcard .rimg img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+   transition: 0.5s;
+}
+.rcard:hover .rimg img {
+   transform: scale(1.08);
+}
+.rcard .rbody {
+   padding: 14px;
+}
+.rcard .rtitle {
+   font-size: 0.88rem;
+   font-weight: 700;
+   color: var(--dark);
+   margin-bottom: 4px;
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+}
+.rcard .rprice {
+   font-size: 1rem;
+   font-weight: 800;
+   color: var(--primary);
+   font-family: "Playfair Display", serif;
+}
+.rcard .radd {
+   width: 100%;
+   background: linear-gradient(135deg, var(--primary), #c01e12);
+   color: #fff;
+   border: none;
+   border-radius: 8px;
+   padding: 8px;
+   font-size: 0.8rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+   margin-top: 8px;
+}
+.rcard .radd:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 4px 14px rgba(232,40,26,0.3);
+}
+
+
 #deals {
   background: var(--cream);
 }
@@ -3527,6 +3639,1131 @@ footer {
   color: var(--secondary);
 }
 .csdelbar strong {
-  color: var(--secondary);
+   color: var(--secondary);
 }
+
+/* ===================== PROMO CODE ===================== */
+.cspromo {
+   padding: 12px 22px 16px;
+   border-bottom: 1px solid #eee;
+}
+.csprow {
+   display: flex;
+   gap: 8px;
+}
+.csproinp {
+   flex: 1;
+   border: 2px solid #e5e5e5;
+   border-radius: 9px;
+   padding: 9px 12px;
+   font-size: 0.85rem;
+   font-family: "Poppins", sans-serif;
+   outline: none;
+   transition: 0.3s;
+}
+.csproinp:focus {
+   border-color: var(--primary);
+}
+.csprobtn {
+   background: var(--dark);
+   color: #fff;
+   border: none;
+   border-radius: 9px;
+   padding: 9px 16px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+   white-space: nowrap;
+}
+.csprobtn:hover {
+   background: var(--primary);
+}
+.cspmsg {
+   font-size: 0.78rem;
+   margin-top: 7px;
+   font-weight: 600;
+}
+.cspmsg.err {
+   color: #ef4444;
+}
+.cspmsg.ok {
+   color: var(--green);
+}
+.cspdiscount {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-top: 8px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   color: var(--green);
+   background: rgba(45,106,79,0.07);
+   border-radius: 8px;
+   padding: 7px 12px;
+}
+.cspdiscount span:last-child {
+   font-weight: 800;
+}
+
+/* ===================== FREE DELIVERY PROGRESS ===================== */
+.csfreedel {
+   padding: 12px 22px 14px;
+   border-bottom: 1px solid #eee;
+}
+.csfdbg {
+   height: 6px;
+   background: #e5e5e5;
+   border-radius: 3px;
+   overflow: hidden;
+   margin-bottom: 7px;
+}
+.csfdprog {
+   height: 100%;
+   background: linear-gradient(90deg, var(--green), #4ade80);
+   border-radius: 3px;
+   width: 0%;
+   transition: width 0.5s ease;
+}
+.csfdinfo {
+   font-size: 0.78rem;
+   color: #888;
+   font-weight: 600;
+}
+.csfdinfo strong {
+   color: var(--primary);
+}
+
+/* ===================== PRODUCT CUSTOMIZATION ===================== */
+.mpopts {
+   margin-bottom: 16px;
+}
+.mpoptgrp {
+   margin-bottom: 14px;
+}
+.mplbl {
+   font-size: 0.78rem;
+   font-weight: 700;
+   color: var(--dark);
+   display: block;
+   margin-bottom: 7px;
+   text-transform: uppercase;
+   letter-spacing: 0.8px;
+}
+.mpoptsel {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 7px;
+}
+.mpopt {
+   border: 2px solid #e5e5e5;
+   background: #fff;
+   border-radius: 8px;
+   padding: 7px 13px;
+   font-size: 0.78rem;
+   font-weight: 600;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+   color: #555;
+}
+.mpopt:hover {
+   border-color: var(--primary);
+   color: var(--primary);
+}
+.mpopt.active {
+   background: var(--primary);
+   border-color: var(--primary);
+   color: #fff;
+}
+.mpopt.hot {
+   border-color: var(--secondary);
+   color: var(--secondary);
+}
+.mpopt.hot.active {
+   background: var(--secondary);
+   border-color: var(--secondary);
+   color: var(--dark);
+}
+.mpopt.fire {
+   border-color: #ef4444;
+   color: #ef4444;
+}
+.mpopt.fire.active {
+   background: #ef4444;
+   border-color: #ef4444;
+   color: #fff;
+}
+.mpopt.ex {
+   border-color: #ddd;
+   background: #fafafa;
+   font-size: 0.72rem;
+}
+
+/* ===================== BREADCRUMBS ===================== */
+.breadcrumb-wrap {
+   background: #fff;
+   padding: 10px 0;
+   border-bottom: 1px solid #f2f2f2;
+   font-size: 0.82rem;
+}
+.breadcrumb {
+   background: transparent;
+   padding: 0;
+   margin: 0;
+}
+.breadcrumb-item a {
+   color: #888;
+   text-decoration: none;
+   transition: 0.3s;
+}
+.breadcrumb-item a:hover {
+   color: var(--primary);
+}
+.breadcrumb-item.active {
+   color: var(--dark);
+   font-weight: 600;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+   content: "›";
+   color: #ccc;
+   margin: 0 8px;
+}
+
+/* ===================== TRUST BADGES ===================== */
+.trustsec {
+   background: #fff;
+   padding: 40px 0;
+   border-top: 1px solid #f2f2f2;
+}
+.trustgrid {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 20px;
+   text-align: center;
+}
+.trustitem {
+   padding: 18px;
+   border-radius: 14px;
+   background: var(--cream);
+   transition: 0.3s;
+}
+.trustitem:hover {
+   transform: translateY(-4px);
+   box-shadow: var(--shadow);
+}
+.trustico {
+   width: 52px;
+   height: 52px;
+   border-radius: 50%;
+   background: linear-gradient(135deg, var(--primary), var(--secondary));
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   color: #fff;
+   font-size: 1.3rem;
+   margin-bottom: 10px;
+}
+.trusttxt strong {
+   display: block;
+   font-size: 0.88rem;
+   color: var(--dark);
+   margin-bottom: 2px;
+}
+.trusttxt small {
+   font-size: 0.72rem;
+   color: #aaa;
+}
+
+/* ===================== LIVE CHAT WIDGET ===================== */
+.livechat {
+   position: fixed;
+   bottom: 28px;
+   right: 28px;
+   z-index: 99998;
+   font-family: "Poppins", sans-serif;
+}
+.lcbtn {
+   background: linear-gradient(135deg, var(--primary), var(--secondary));
+   color: #fff;
+   padding: 12px 20px;
+   border-radius: 50px;
+   display: flex;
+   align-items: center;
+   gap: 9px;
+   font-weight: 700;
+   font-size: 0.88rem;
+   cursor: pointer;
+   box-shadow: 0 8px 28px rgba(232, 40, 26, 0.35);
+   transition: 0.3s;
+   animation: lcPulse 2.5s ease-in-out infinite;
+}
+.lcbtn:hover {
+   transform: translateY(-3px) scale(1.03);
+   box-shadow: 0 14px 34px rgba(232, 40, 26, 0.5);
+}
+.lcbtn i {
+   font-size: 1.2rem;
+}
+@keyframes lcPulse {
+   0%,100% { box-shadow: 0 8px 28px rgba(232, 40, 26, 0.35); }
+   50% { box-shadow: 0 8px 40px rgba(232, 40, 26, 0.6); }
+}
+.lcbox {
+   position: absolute;
+   bottom: 60px;
+   right: 0;
+   width: 320px;
+   max-width: 92vw;
+   background: #fff;
+   border-radius: 18px;
+   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+   overflow: hidden;
+   animation: lcIn 0.3s ease;
+}
+@keyframes lcIn {
+   from { opacity: 0; transform: translateY(20px) scale(0.95); }
+   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lchead {
+   background: linear-gradient(135deg, var(--primary), var(--secondary));
+   color: #fff;
+   padding: 14px 18px;
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   font-weight: 700;
+   font-size: 0.9rem;
+}
+.lcclose {
+   background: none;
+   border: none;
+   color: #fff;
+   font-size: 1.1rem;
+   cursor: pointer;
+   opacity: 0.8;
+   transition: 0.3s;
+}
+.lcclose:hover {
+   opacity: 1;
+   transform: scale(1.1);
+}
+.lcmessages {
+   height: 260px;
+   overflow-y: auto;
+   padding: 14px;
+   background: #fafafa;
+}
+.lcmsg {
+   margin-bottom: 10px;
+   max-width: 80%;
+   padding: 9px 13px;
+   border-radius: 12px;
+   font-size: 0.8rem;
+   line-height: 1.5;
+   animation: lcMsgIn 0.3s ease;
+}
+@keyframes lcMsgIn {
+   from { opacity: 0; transform: translateY(8px); }
+   to { opacity: 1; transform: translateY(0); }
+}
+.lcmsg.user {
+   background: var(--primary);
+   color: #fff;
+   margin-left: auto;
+   border-bottom-right-radius: 4px;
+}
+.lcmsg.bot {
+   background: #fff;
+   color: var(--dark);
+   border: 1px solid #eee;
+   border-bottom-left-radius: 4px;
+}
+.lcmsg.bot strong {
+   color: var(--primary);
+}
+.lcinputrow {
+   display: flex;
+   padding: 10px;
+   border-top: 1px solid #eee;
+   gap: 8px;
+}
+.lcinput {
+   flex: 1;
+   border: 2px solid #eee;
+   border-radius: 25px;
+   padding: 9px 14px;
+   font-size: 0.82rem;
+   outline: none;
+   font-family: "Poppins", sans-serif;
+   transition: 0.3s;
+}
+.lcinput:focus {
+   border-color: var(--primary);
+}
+.lcsend {
+   width: 36px;
+   height: 36px;
+   border-radius: 50%;
+   background: var(--primary);
+   color: #fff;
+   border: none;
+   cursor: pointer;
+   transition: 0.3s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+.lcsend:hover {
+   background: #c01e12;
+   transform: scale(1.1);
+}
+
+/* ===================== ORDER HISTORY ===================== */
+#orderHistoryModal {
+   display: none;
+   position: fixed;
+   inset: 0;
+   z-index: 99999;
+   background: rgba(0,0,0,0.8);
+   backdrop-filter: blur(6px);
+   align-items: center;
+   justify-content: center;
+   padding: 20px;
+}
+#orderHistoryModal.open {
+   display: flex;
+   animation: scaleIn 0.35s ease;
+}
+.ohbox {
+   background: #fff;
+   border-radius: 22px;
+   max-width: 560px;
+   width: 100%;
+   max-height: 85vh;
+   overflow-y: auto;
+   padding: 24px;
+   position: relative;
+   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.ohclose {
+   position: absolute;
+   top: 14px;
+   right: 14px;
+   width: 34px;
+   height: 34px;
+   border-radius: 50%;
+   background: #f2f2f2;
+   border: none;
+   font-size: 0.95rem;
+   cursor: pointer;
+   transition: 0.3s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+.ohclose:hover {
+   background: var(--primary);
+   color: #fff;
+}
+.ohhead {
+   font-weight: 800;
+   font-size: 1.3rem;
+   margin-bottom: 16px;
+   padding-bottom: 12px;
+   border-bottom: 2px solid #f2f2f2;
+}
+.ohhead i {
+   color: var(--primary);
+}
+.ohitem {
+   background: var(--cream);
+   border-radius: 14px;
+   padding: 16px;
+   margin-bottom: 12px;
+   transition: 0.3s;
+}
+.ohitem:hover {
+   box-shadow: var(--shadow);
+}
+.ohid {
+   font-weight: 700;
+   color: var(--primary);
+   font-size: 0.85rem;
+   margin-bottom: 6px;
+}
+.ohitems {
+   font-size: 0.82rem;
+   color: #666;
+   margin-bottom: 6px;
+   line-height: 1.5;
+}
+.ohtotal {
+   font-weight: 700;
+   color: var(--dark);
+   font-size: 0.9rem;
+}
+.ohstatus {
+   display: inline-block;
+   padding: 3px 10px;
+   border-radius: 20px;
+   font-size: 0.72rem;
+   font-weight: 700;
+   margin-left: 8px;
+   background: var(--green);
+   color: #fff;
+}
+.ohempty {
+   text-align: center;
+   padding: 40px;
+   color: #bbb;
+}
+.ohempty i {
+   font-size: 3rem;
+   display: block;
+   margin-bottom: 12px;
+   color: #ddd;
+}
+
+/* ===================== ADDRESS BOOK ===================== */
+.ckaddress {
+   background: #fff;
+   border-radius: 14px;
+   padding: 16px;
+   margin-bottom: 16px;
+   border: 1px solid #eee;
+}
+.ckaddhdr {
+   font-weight: 700;
+   font-size: 0.9rem;
+   color: var(--dark);
+   margin-bottom: 10px;
+}
+.ckaddhdr i {
+   color: var(--primary);
+}
+.ckaddlist {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   margin-bottom: 10px;
+}
+.ckadditem {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 10px 12px;
+   background: var(--cream);
+   border-radius: 10px;
+   border: 2px solid transparent;
+   cursor: pointer;
+   transition: 0.3s;
+}
+.ckadditem:hover,
+.ckadditem.sel {
+   border-color: var(--primary);
+   background: #fff5f5;
+}
+.ckadditem .ckaddlabel {
+   font-size: 0.82rem;
+   font-weight: 600;
+   color: var(--dark);
+}
+.ckadditem .ckaddsub {
+   font-size: 0.72rem;
+   color: #888;
+}
+.ckadddel {
+   background: none;
+   border: none;
+   color: #ccc;
+   cursor: pointer;
+   font-size: 0.85rem;
+   padding: 4px;
+   transition: 0.3s;
+}
+.ckadddel:hover {
+   color: #ef4444;
+}
+.ckaddform {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+.ckaddinp {
+   width: 100%;
+   border: 2px solid #eee;
+   border-radius: 9px;
+   padding: 9px 12px;
+   font-size: 0.82rem;
+   font-family: "Poppins", sans-serif;
+   outline: none;
+   transition: 0.3s;
+}
+.ckaddinp:focus {
+   border-color: var(--primary);
+}
+.cksaveaddr {
+   background: var(--green);
+   color: #fff;
+   border: none;
+   border-radius: 8px;
+   padding: 9px 16px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+}
+.cksaveaddr:hover {
+   background: #1a4a35;
+}
+.ckcanceladdr {
+   background: #eee;
+   color: #666;
+   border: none;
+   border-radius: 8px;
+   padding: 9px 16px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+}
+.ckcanceladdr:hover {
+   background: #ddd;
+}
+.ckaddnew {
+   background: var(--light);
+   border: 2px dashed #ddd;
+   color: #666;
+   border-radius: 10px;
+   padding: 10px;
+   font-size: 0.82rem;
+   font-weight: 600;
+   cursor: pointer;
+   transition: 0.3s;
+   width: 100%;
+   font-family: "Poppins", sans-serif;
+}
+.ckaddnew:hover {
+   border-color: var(--primary);
+   color: var(--primary);
+   background: #fff5f5;
+}
+
+/* ===================== PRODUCT DETAIL ENHANCEMENTS ===================== */
+.mpgallery {
+   margin-bottom: 16px;
+}
+.mpgalrow {
+   display: flex;
+   gap: 8px;
+}
+.mpgalimg {
+   width: 56px;
+   height: 56px;
+   border-radius: 10px;
+   overflow: hidden;
+   cursor: pointer;
+   border: 2px solid transparent;
+   transition: 0.3s;
+   flex-shrink: 0;
+}
+.mpgalimg:hover,
+.mpgalimg.active {
+   border-color: var(--primary);
+   transform: scale(1.08);
+}
+.mpgalimg img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+.mpimg {
+   position: relative;
+   overflow: hidden;
+   cursor: zoom-in;
+}
+.mpimg img {
+   transition: transform 0.3s ease;
+}
+.mpimg.zoomed img {
+   transform: scale(2);
+   cursor: zoom-out;
+}
+
+.mpnutrition {
+   background: var(--cream);
+   border-radius: 12px;
+   padding: 14px;
+   margin-bottom: 16px;
+}
+.mpnuttitle {
+   font-size: 0.82rem;
+   font-weight: 700;
+   color: var(--dark);
+   margin-bottom: 10px;
+   text-transform: uppercase;
+   letter-spacing: 0.8px;
+}
+.mpnuttitle i {
+   color: var(--primary);
+}
+.mpnutgrid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 8px;
+}
+.mpnutitem {
+   text-align: center;
+   background: #fff;
+   border-radius: 8px;
+   padding: 8px;
+}
+.mpnutval {
+   font-weight: 800;
+   font-size: 0.9rem;
+   color: var(--dark);
+}
+.mpnutlbl {
+   font-size: 0.65rem;
+   color: #aaa;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+}
+
+/* ===================== REVIEWS ===================== */
+.mprev {
+   margin-top: 16px;
+   padding-top: 16px;
+   border-top: 2px dashed #eee;
+}
+.mprevhdr {
+   font-weight: 700;
+   font-size: 0.88rem;
+   color: var(--dark);
+   margin-bottom: 12px;
+}
+.mprevhdr i {
+   color: var(--secondary);
+}
+.mprevhdr span {
+   color: #aaa;
+   font-weight: 500;
+}
+.mprevlist {
+   max-height: 200px;
+   overflow-y: auto;
+   margin-bottom: 12px;
+}
+.mprevitem {
+   padding: 12px;
+   background: var(--cream);
+   border-radius: 10px;
+   margin-bottom: 8px;
+}
+.mprevhead {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 4px;
+}
+.mprevname {
+   font-weight: 700;
+   font-size: 0.82rem;
+   color: var(--dark);
+}
+.mprevstars {
+   color: var(--secondary);
+   font-size: 0.72rem;
+}
+.mprevtext {
+   font-size: 0.78rem;
+   color: #666;
+   line-height: 1.5;
+}
+.mprevadd {
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+.mprevstars {
+   display: flex;
+   gap: 4px;
+}
+.mprevstar {
+   background: none;
+   border: none;
+   color: #ddd;
+   font-size: 1.1rem;
+   cursor: pointer;
+   transition: 0.3s;
+   padding: 0;
+}
+.mprevstar:hover,
+.mprevstar.active {
+   color: var(--secondary);
+   transform: scale(1.2);
+}
+.mprevname {
+   border: 2px solid #eee;
+   border-radius: 9px;
+   padding: 8px 12px;
+   font-size: 0.82rem;
+   outline: none;
+   font-family: "Poppins", sans-serif;
+   transition: 0.3s;
+}
+.mprevname:focus {
+   border-color: var(--primary);
+}
+.mprevbody {
+   border: 2px solid #eee;
+   border-radius: 9px;
+   padding: 9px 12px;
+   font-size: 0.82rem;
+   outline: none;
+   font-family: "Poppins", sans-serif;
+   resize: none;
+   transition: 0.3s;
+}
+.mprevbody:focus {
+   border-color: var(--primary);
+}
+.mprevbtn {
+   background: linear-gradient(135deg, var(--primary), #c01e12);
+   color: #fff;
+   border: none;
+   border-radius: 9px;
+   padding: 9px 16px;
+   font-size: 0.82rem;
+   font-weight: 700;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+}
+.mprevbtn:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 6px 18px rgba(232, 40, 26, 0.35);
+}
+
+/* ===================== LIVE CHAT ===================== */
+.livechat {
+   position: fixed;
+   bottom: 28px;
+   right: 28px;
+   z-index: 99998;
+}
+.lcbtn i {
+   font-size: 1.3rem;
+}
+.lcbox {
+   position: absolute;
+   bottom: 60px;
+   right: 0;
+   width: 320px;
+   max-width: 92vw;
+   background: #fff;
+   border-radius: 18px;
+   overflow: hidden;
+   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+/* ===================== ORDER HISTORY ===================== */
+#orderHistoryModal {
+   display: none;
+   position: fixed;
+   inset: 0;
+   z-index: 99999;
+   background: rgba(0,0,0,0.8);
+   backdrop-filter: blur(6px);
+   align-items: center;
+   justify-content: center;
+   padding: 20px;
+}
+#orderHistoryModal.open {
+   display: flex;
+   animation: scaleIn 0.35s ease;
+}
+.ohbox {
+   background: #fff;
+   border-radius: 22px;
+   max-width: 560px;
+   width: 100%;
+   max-height: 85vh;
+   overflow-y: auto;
+   padding: 24px;
+   position: relative;
+   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.ohclose {
+   position: absolute;
+   top: 14px;
+   right: 14px;
+   width: 34px;
+   height: 34px;
+   border-radius: 50%;
+   background: #f2f2f2;
+   border: none;
+   font-size: 0.95rem;
+   cursor: pointer;
+   transition: 0.3s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+.ohclose:hover {
+   background: var(--primary);
+   color: #fff;
+}
+.ohhead {
+   font-weight: 800;
+   font-size: 1.3rem;
+   margin-bottom: 16px;
+   padding-bottom: 12px;
+   border-bottom: 2px solid #f2f2f2;
+}
+.ohhead i {
+   color: var(--primary);
+}
+.ohitem {
+   background: var(--cream);
+   border-radius: 14px;
+   padding: 16px;
+   margin-bottom: 12px;
+}
+.ohid {
+   font-weight: 700;
+   color: var(--primary);
+   font-size: 0.85rem;
+   margin-bottom: 6px;
+}
+.ohitems {
+   font-size: 0.82rem;
+   color: #666;
+   margin-bottom: 6px;
+   line-height: 1.5;
+}
+.ohtotal {
+   font-weight: 700;
+   color: var(--dark);
+   font-size: 0.9rem;
+}
+.ohstatus {
+   display: inline-block;
+   padding: 3px 10px;
+   border-radius: 20px;
+   font-size: 0.72rem;
+   font-weight: 700;
+   margin-left: 8px;
+   background: var(--green);
+   color: #fff;
+}
+.ohempty {
+   text-align: center;
+   padding: 40px;
+   color: #bbb;
+}
+.ohempty i {
+   font-size: 3rem;
+   display: block;
+   margin-bottom: 12px;
+   color: #ddd;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 991px) {
+   .trustgrid {
+      grid-template-columns: repeat(2, 1fr);
+   }
+}
+@media (max-width: 767px) {
+   .trustgrid {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+   }
+   .trustitem {
+      padding: 14px;
+   }
+   .mpbox .mpimg {
+      min-height: 220px;
+   }
+}
+@media (max-width: 480px) {
+   .trustgrid {
+      grid-template-columns: 1fr;
+   }
+}
+
+
+
+/* ===================== CHECKOUT ORDER SUMMARY ===================== */
+.cksummary {
+   background: var(--light);
+   border-radius: 14px;
+   padding: 16px 18px;
+   margin-bottom: 18px;
+}
+.cksumhdr {
+   font-weight: 700;
+   font-size: 0.88rem;
+   color: var(--dark);
+   margin-bottom: 10px;
+   padding-bottom: 8px;
+   border-bottom: 1px dashed #ddd;
+}
+.cksumhdr i {
+   color: var(--primary);
+}
+.cksumlist {
+   font-size: 0.82rem;
+   margin-bottom: 10px;
+}
+.cksumitem {
+   display: flex;
+   justify-content: space-between;
+   padding: 4px 0;
+   color: #666;
+}
+.cksumsub,
+.cksumdisc,
+.cksumdel,
+.cksumtotal {
+   display: flex;
+   justify-content: space-between;
+   font-size: 0.85rem;
+   padding: 4px 0;
+   color: #666;
+}
+.cksumtotal {
+   border-top: 2px solid #eee;
+   padding-top: 10px;
+   margin-top: 4px;
+   font-size: 1.05rem;
+   font-weight: 800;
+   color: var(--dark);
+}
+.cksumdisc {
+   color: var(--green);
+   font-weight: 600;
+}
+.cksave {
+   display: block;
+   font-size: 0.78rem;
+   color: var(--green);
+   font-weight: 600;
+   margin-top: 2px;
+}
+
+/* ===================== TOAST NOTIFICATIONS ===================== */
+#toastContainer {
+   position: fixed;
+   top: 20px;
+   right: 20px;
+   z-index: 999999;
+   display: flex;
+   flex-direction: column;
+   gap: 10px;
+   pointer-events: none;
+}
+.toast {
+   background: #fff;
+   border-radius: 12px;
+   padding: 14px 18px;
+   box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   font-size: 0.88rem;
+   font-weight: 600;
+   color: var(--dark);
+   min-width: 280px;
+   max-width: 400px;
+   pointer-events: auto;
+   animation: toastIn 0.4s ease, toastOut 0.4s ease 2.6s forwards;
+   border-left: 4px solid var(--green);
+   font-family: "Poppins", sans-serif;
+}
+.toast.warn {
+   border-left-color: var(--secondary);
+}
+.toast.err {
+   border-left-color: #ef4444;
+}
+.toast i {
+   font-size: 1.15rem;
+   flex-shrink: 0;
+}
+.toast.success i {
+   color: var(--green);
+}
+.toast.warn i {
+   color: var(--secondary);
+}
+.toast.err i {
+   color: #ef4444;
+}
+@keyframes toastIn {
+   from { opacity: 0; transform: translateX(40px); }
+   to { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+   to { opacity: 0; transform: translateX(40px); }
+}
+
+/* ===================== WISHLIST HEART ===================== */
+.heart-wish {
+   color: #ef4444 !important;
+   animation: heartPop 0.4s ease;
+}
+@keyframes heartPop {
+   0% { transform: scale(1); }
+   50% { transform: scale(1.4); }
+   100% { transform: scale(1); }
+}
+
+/* ===================== DELIVERY SLOT PICKER ===================== */
+.del-slot-picker {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   margin-top: 6px;
+}
+.del-slot {
+   border: 2px solid #e5e5e5;
+   background: #fff;
+   border-radius: 8px;
+   padding: 8px 14px;
+   font-size: 0.82rem;
+   font-weight: 600;
+   cursor: pointer;
+   transition: 0.3s;
+   font-family: "Poppins", sans-serif;
+   color: #555;
+}
+.del-slot:hover,
+.del-slot.active {
+   border-color: var(--primary);
+   color: var(--primary);
+   background: #fff5f5;
+}
+
+/* ===================== CHECKOUT PAYMENT PANEL ORDER NOTES ===================== */
+.order-note-row {
+   background: #fff;
+   border-radius: 10px;
+   padding: 12px;
+   margin-bottom: 12px;
+   border: 1px dashed #ddd;
+}
+#orderNoteRowCash {
+   background: #fff;
+   border-radius: 10px;
+   padding: 12px;
+   margin-bottom: 12px;
+   border: 1px dashed #ddd;
+}
+
 
