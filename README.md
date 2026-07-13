@@ -5,7 +5,39 @@
 
 #### About
 
-This is a fully functional fast food e-commerce website built with HTML, CSS, and JavaScript. It features a complete ordering system with cart, multiple payment methods, and order tracking.
+This is a fully functiona
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+le payment methods, and order tracking.
 
 ## Getting Started
 

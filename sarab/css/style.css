@@ -3456,25 +3456,449 @@ footer {
    color: var(--primary);
    font-family: "Playfair Display", serif;
 }
-.rcard .radd {
-   width: 100%;
-   background: linear-gradient(135deg, var(--primary), #c01e12);
+
+/* ===================== QUICK VIEW ON HOVER ===================== */
+.mcard .mquickview {
+   position: absolute;
+   inset: 0;
+   background: rgba(0,0,0,0.5);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   opacity: 0;
+   transition: 0.3s;
+   border-radius: 18px;
+}
+.mcard:hover .mquickview {
+   opacity: 1;
+}
+.mquickview-btn {
+   background: #fff;
+   color: var(--dark);
+   border: none;
+   padding: 10px 20px;
+   border-radius: 25px;
+   font-weight: 700;
+   font-size: 0.82rem;
+   cursor: pointer;
+   font-family: "Poppins", sans-serif;
+   transition: 0.3s;
+   transform: translateY(10px);
+}
+.mcard:hover .mquickview-btn {
+   transform: translateY(0);
+}
+.mquickview-btn:hover {
+   background: var(--primary);
+   color: #fff;
+}
+
+/* ===================== CART ABANDONMENT RECOVERY ===================== */
+.cartrecover {
+   position: fixed;
+   bottom: 80px;
+   left: 20px;
+   background: #fff;
+   border-radius: 14px;
+   padding: 14px 18px;
+   box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+   z-index: 99997;
+   max-width: 300px;
+   display: none;
+   animation: slideInLeft 0.4s ease;
+   border-left: 4px solid var(--secondary);
+}
+.cartrecover.show {
+   display: block;
+}
+.cartrecover-title {
+   font-weight: 700;
+   font-size: 0.85rem;
+   color: var(--dark);
+   margin-bottom: 4px;
+}
+.cartrecover-text {
+   font-size: 0.78rem;
+   color: #888;
+   margin-bottom: 8px;
+}
+.cartrecover-btn {
+   background: var(--primary);
    color: #fff;
    border: none;
    border-radius: 8px;
-   padding: 8px;
-   font-size: 0.8rem;
+   padding: 7px 14px;
+   font-size: 0.78rem;
    font-weight: 700;
    cursor: pointer;
-   transition: 0.3s;
    font-family: "Poppins", sans-serif;
-   margin-top: 8px;
 }
-.rcard .radd:hover {
-   transform: translateY(-2px);
-   box-shadow: 0 4px 14px rgba(232,40,26,0.3);
+@keyframes slideInLeft {
+   from { opacity: 0; transform: translateX(-30px); }
+   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ===================== SEARCH AUTOCOMPLETE ===================== */
+.sovresults {
+   position: absolute;
+   top: 100%;
+   left: 0;
+   right: 0;
+   background: #fff;
+   border-radius: 12px;
+   box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+   margin-top: 8px;
+   max-height: 280px;
+   overflow-y: auto;
+   display: none;
+   z-index: 100;
+}
+.sovresults.show {
+   display: block;
+}
+.sovresult-item {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   padding: 10px 14px;
+   cursor: pointer;
+   transition: 0.2s;
+   border-bottom: 1px solid #f5f5f5;
+}
+.sovresult-item:hover {
+   background: var(--cream);
+}
+.sovresult-item img {
+   width: 40px;
+   height: 40px;
+   border-radius: 8px;
+   object-fit: cover;
+}
+.sovresult-info strong {
+   display: block;
+   font-size: 0.82rem;
+   color: var(--dark);
+}
+.sovresult-info small {
+   font-size: 0.72rem;
+   color: var(--primary);
+   font-weight: 600;
+}
+
+/* ===================== PRICE FILTER ===================== */
+.pricefilter-wrap {
+   background: #fff;
+   border-radius: 14px;
+   padding: 16px;
+   margin-bottom: 20px;
+   border: 1px solid #eee;
+}
+.pricefilter-title {
+   font-weight: 700;
+   font-size: 0.88rem;
+   color: var(--dark);
+   margin-bottom: 12px;
+}
+.pricefilter-range {
+   display: flex;
+   justify-content: space-between;
+   font-size: 0.78rem;
+   color: #888;
+   margin-bottom: 8px;
+   font-weight: 600;
+}
+.pricefilter-values {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-bottom: 10px;
+}
+.pricefilter-inp {
+   flex: 1;
+   border: 2px solid #eee;
+   border-radius: 8px;
+   padding: 8px 10px;
+   font-size: 0.82rem;
+   font-family: "Poppins", sans-serif;
+   outline: none;
+   text-align: center;
+}
+.pricefilter-inp:focus {
+   border-color: var(--primary);
+}
+.pricefilter-apply {
+   background: var(--primary);
+   color: #fff;
+   border: none;
+   border-radius: 8px;
+   padding: 8px 16px;
+   font-size: 0.78rem;
+   font-weight: 700;
+   cursor: pointer;
+   font-family: "Poppins", sans-serif;
+}
+
+/* ===================== COMPARE PRODUCTS ===================== */
+.compare-bar {
+   position: fixed;
+   bottom: 80px;
+   right: 20px;
+   background: #fff;
+   border-radius: 14px;
+   padding: 12px 16px;
+   box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+   z-index: 99997;
+   display: none;
+   align-items: center;
+   gap: 10px;
+   border: 2px solid var(--primary);
+   animation: slideInRight 0.4s ease;
+}
+.compare-bar.show {
+   display: flex;
+}
+.compare-bar-info {
+   font-size: 0.82rem;
+   color: var(--dark);
+   font-weight: 600;
+}
+.compare-bar-btn {
+   background: var(--primary);
+   color: #fff;
+   border: none;
+   border-radius: 8px;
+   padding: 7px 14px;
+   font-size: 0.72rem;
+   font-weight: 700;
+   cursor: pointer;
+   font-family: "Poppins", sans-serif;
+}
+.compare-bar-clear {
+   background: #eee;
+   color: #666;
+   border: none;
+   border-radius: 8px;
+   padding: 7px 10px;
+   font-size: 0.72rem;
+   cursor: pointer;
+}
+@keyframes slideInRight {
+   from { opacity: 0; transform: translateX(30px); }
+   to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===================== COMPARE MODAL ===================== */
+#compareModal {
+   display: none;
+   position: fixed;
+   inset: 0;
+   z-index: 99999;
+   background: rgba(0,0,0,0.8);
+   backdrop-filter: blur(6px);
+   align-items: center;
+   justify-content: center;
+   padding: 20px;
+}
+#compareModal.open {
+   display: flex;
+   animation: scaleIn 0.35s ease;
+}
+.compare-table {
+   background: #fff;
+   border-radius: 18px;
+   padding: 24px;
+   max-width: 800px;
+   width: 100%;
+   overflow-x: auto;
+   max-height: 80vh;
+}
+.compare-table table {
+   width: 100%;
+   border-collapse: collapse;
+}
+.compare-table th,
+.compare-table td {
+   padding: 12px;
+   text-align: center;
+   border-bottom: 1px solid #eee;
+   font-size: 0.85rem;
+}
+.compare-table th {
+   background: var(--cream);
+   font-weight: 700;
+   color: var(--dark);
+}
+.compare-table td:first-child {
+   text-align: left;
+   font-weight: 600;
+   color: #888;
+   width: 120px;
+}
+
+/* ===================== VIEW TOGGLE ===================== */
+.viewtog {
+   display: inline-flex;
+   background: #fff;
+   border: 2px solid #eee;
+   border-radius: 10px;
+   overflow: hidden;
+}
+.viewbtn {
+   background: transparent;
+   border: none;
+   padding: 8px 12px;
+   cursor: pointer;
+   color: #888;
+   transition: 0.3s;
+   font-size: 0.85rem;
+}
+.viewbtn.active,
+.viewbtn:hover {
+   background: var(--primary);
+   color: #fff;
+}
+
+/* List view */
+#mgrid.list-view {
+   display: flex;
+   flex-direction: column;
+   gap: 14px;
+}
+#mgrid.list-view .mwrap {
+   display: flex;
+   align-items: center;
+   background: #fff;
+   border-radius: 16px;
+   padding: 16px;
+   gap: 18px;
+   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+#mgrid.list-view .mcard {
+   display: flex;
+   flex-direction: row;
+   align-items: center;
+   flex: 1;
+   border-radius: 14px;
+}
+#mgrid.list-view .mimg {
+   width: 140px;
+   height: 140px;
+   border-radius: 12px;
+   flex-shrink: 0;
+   margin: 0;
+}
+#mgrid.list-view .mbody {
+   flex: 1;
+   padding: 0;
+}
+#mgrid.list-view .mfoot {
+   flex-shrink: 0;
+   text-align: right;
+   min-width: 120px;
+}
+#mgrid.list-view .madd {
+   width: auto;
+   white-space: nowrap;
+}
+#mgrid.list-view .mhrt,
+#mgrid.list-view .mbdg {
+   display: none;
+}
+
+/* ===================== REVIEW VOTING ===================== */
+.mprevhelpful {
+   font-size: 0.72rem;
+   color: #aaa;
+   margin-top: 4px;
+}
+.mprevhelpful button {
+   background: none;
+   border: none;
+   color: var(--primary);
+   cursor: pointer;
+   font-weight: 600;
+   font-size: 0.72rem;
+   padding: 0;
+   font-family: "Poppins", sans-serif;
+}
+.mprevhelpful button:hover {
+   text-decoration: underline;
+}
+
+/* ===================== IMAGE LIGHTBOX ===================== */
+.lightbox {
+   position: fixed;
+   inset: 0;
+   z-index: 999999;
+   background: rgba(0,0,0,0.92);
+   display: none;
+   align-items: center;
+   justify-content: center;
+   padding: 20px;
+   cursor: zoom-out;
+}
+.lightbox.open {
+   display: flex;
+   animation: scaleIn 0.3s ease;
+}
+.lightbox img {
+   max-width: 90vw;
+   max-height: 85vh;
+   border-radius: 12px;
+   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.lightbox-close {
+   position: absolute;
+   top: 20px;
+   right: 20px;
+   width: 44px;
+   height: 44px;
+   border-radius: 50%;
+   background: rgba(255,255,255,0.15);
+   border: none;
+   color: #fff;
+   font-size: 1.3rem;
+   cursor: pointer;
+   transition: 0.3s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+.lightbox-close:hover {
+   background: rgba(255,255,255,0.3);
+   transform: scale(1.1);
+}
+
+/* ===================== BACK TO TOP ===================== */
+#btt {
+   position: fixed;
+   bottom: 28px;
+   right: 28px;
+   width: 44px;
+   height: 44px;
+   border-radius: 50%;
+   background: linear-gradient(135deg, var(--primary), var(--secondary));
+   color: #fff;
+   border: none;
+   font-size: 1rem;
+   cursor: pointer;
+   z-index: 9999;
+   opacity: 0;
+   visibility: hidden;
+   transition: 0.4s;
+   box-shadow: 0 6px 20px rgba(232,40,26,0.3);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+#btt.show {
+   opacity: 1;
+   visibility: visible;
+}
+#btt:hover {
+   transform: translateY(-4px);
+   box-shadow: 0 12px 30px rgba(232,40,26,0.5);
+}
 
 #deals {
   background: var(--cream);
@@ -4766,4 +5190,128 @@ footer {
    border: 1px dashed #ddd;
 }
 
+/* ===================== MENU CARD ACTION BUTTONS ===================== */
+.mcomp,
+.mshare {
+   position: absolute;
+   top: 10px;
+   width: 32px;
+   height: 32px;
+   border-radius: 50%;
+   background: #fff;
+   border: none;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   cursor: pointer;
+   font-size: 0.8rem;
+   color: #888;
+   transition: 0.3s;
+   z-index: 2;
+   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.mcomp {
+   right: 42px;
+}
+.mshare {
+   right: 10px;
+}
+.mcomp:hover,
+.mshare:hover {
+   background: var(--primary);
+   color: #fff;
+   transform: scale(1.15);
+}
+
+/* ===================== CART SUGGESTIONS ===================== */
+.csitemsug {
+   padding: 12px 16px;
+   background: #fff8f0;
+   border-bottom: 1px solid #ffe8cc;
+}
+.csitemsugtitle {
+   font-size: 0.78rem;
+   font-weight: 700;
+   color: var(--secondary);
+   margin-bottom: 8px;
+}
+.csitemsugitem {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   padding: 6px 0;
+}
+.csitemsugitem img {
+   width: 36px;
+   height: 36px;
+   border-radius: 8px;
+   object-fit: cover;
+}
+.csitemsugitem strong {
+   font-size: 0.78rem;
+   color: var(--dark);
+   display: block;
+}
+.csitemsugitem small {
+   font-size: 0.72rem;
+   color: var(--primary);
+   font-weight: 600;
+}
+.csitemsugadd {
+   margin-left: auto;
+   background: var(--primary);
+   color: #fff;
+   border: none;
+   border-radius: 6px;
+   padding: 4px 10px;
+   font-size: 0.68rem;
+   font-weight: 700;
+   cursor: pointer;
+   font-family: "Poppins", sans-serif;
+   white-space: nowrap;
+}
+
+/* ===================== QUICK VIEW BUTTON ===================== */
+.mquickview {
+   position: absolute;
+   inset: 0;
+   background: rgba(0,0,0,0.45);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   opacity: 0;
+   transition: 0.35s;
+   border-radius: 18px;
+   z-index: 3;
+}
+.mcard:hover .mquickview {
+   opacity: 1;
+}
+.mquickview-btn {
+   background: #fff;
+   color: var(--dark);
+   border: none;
+   padding: 10px 22px;
+   border-radius: 25px;
+   font-weight: 700;
+   font-size: 0.82rem;
+   cursor: pointer;
+   font-family: "Poppins", sans-serif;
+   transition: 0.35s;
+   transform: translateY(12px);
+}
+.mcard:hover .mquickview-btn {
+   transform: translateY(0);
+}
+.mquickview-btn:hover {
+   background: var(--primary);
+   color: #fff;
+}
+
+/* ===================== MP COMPARE BUTTON ===================== */
+.mpcomp-btn:hover {
+   background: var(--primary) !important;
+   color: #fff !important;
+   border-color: var(--primary) !important;
+}
 

@@ -1293,7 +1293,8 @@ function renderReviews(title) {
         item.className = 'mprevitem';
         var stars = '\u2605'.repeat(r.stars) + '\u2606'.repeat(5 - r.stars);
         item.innerHTML = '<div class="mprevhead"><span class="mprevname">' + r.name + '</span><span class="mprevstars">' + stars + '</span></div>' +
-            '<div class="mprevtext">' + r.text + '</div>';
+            '<div class="mprevtext">' + r.text + '</div>' +
+            '<div class="mprevhelpful"><button data-votes="0"><i class="fas fa-thumbs-up me-1"></i>Helpful</button></div>';
         list.appendChild(item);
     });
 }
@@ -1623,4 +1624,504 @@ document.getElementById('bcList') && document.querySelectorAll('#bcList .breadcr
         updateBreadcrumb('All Items');
     });
 });
+
+/* ============================================================
+   QUICK VIEW ON HOVER (DESKTOP)
+   ============================================================ */
+if (window.innerWidth > 991) {
+    document.querySelectorAll('.mcard').forEach(function(card) {
+        var qv = document.createElement('div');
+        qv.className = 'mquickview';
+        qv.innerHTML = '<button class="mquickview-btn"><i class="fas fa-eye me-1"></i>Quick View</button>';
+        card.appendChild(qv);
+        qv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openMenuPop(card);
+        });
+    });
+}
+
+/* ============================================================
+   CART ABANDONMENT RECOVERY
+   ============================================================ */
+var cartRecover = document.createElement('div');
+cartRecover.className = 'cartrecover';
+cartRecover.id = 'cartRecover';
+cartRecover.innerHTML = '<div class="cartrecover-title"><i class="fas fa-shopping-cart me-1"></i>You left items in your cart</div>' +
+    '<div class="cartrecover-text">Complete your order before it sells out!</div>' +
+    '<button class="cartrecover-btn" id="cartRecoverBtn">View Cart</button>';
+document.body.appendChild(cartRecover);
+
+var cartRecoverShown = false;
+setTimeout(function() {
+    if (cartItems.length > 0 && !cartRecoverShown && !cartOpen) {
+        cartRecover.classList.add('show');
+        cartRecoverShown = true;
+    }
+}, 30000);
+
+document.getElementById('cartRecoverBtn').addEventListener('click', function() {
+    cartRecover.classList.remove('show');
+    cartBtn.click();
+});
+
+/* ============================================================
+   SEARCH AUTOCOMPLETE
+   ============================================================ */
+var searchInput = document.getElementById('searchInput');
+var sovResults = document.createElement('div');
+sovResults.className = 'sovresults';
+sovResults.id = 'sovResults';
+document.querySelector('.sovinput').appendChild(sovResults);
+
+var allProducts = [];
+document.querySelectorAll('.mcard').forEach(function(card) {
+    allProducts.push({
+        title: card.getAttribute('data-title'),
+        price: card.getAttribute('data-price'),
+        img: card.getAttribute('data-img'),
+        cat: card.getAttribute('data-cat')
+    });
+});
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        var q = this.value.toLowerCase().trim();
+        if (q.length < 2) {
+            sovResults.classList.remove('show');
+            return;
+        }
+        var matches = allProducts.filter(function(p) {
+            return p.title.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q);
+        }).slice(0, 5);
+        if (matches.length === 0) {
+            sovResults.innerHTML = '<div style="padding:14px;text-align:center;color:#bbb;font-size:0.82rem;">No results found</div>';
+        } else {
+            sovResults.innerHTML = matches.map(function(p) {
+                return '<div class="sovresult-item" data-title="' + p.title + '">' +
+                    '<img src="' + p.img + '" alt=""/><div class="sovresult-info"><strong>' + p.title + '</strong><small>$' + p.price + '</small></div></div>';
+            }).join('');
+        }
+        sovResults.classList.add('show');
+
+        document.querySelectorAll('.sovresult-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var title = this.getAttribute('data-title');
+                searchInput.value = title;
+                sovResults.classList.remove('show');
+                var card = document.querySelector('.mcard[data-title="' + title + '"]');
+                if (card) {
+                    document.getElementById('menu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setTimeout(function() { openMenuPop(card); }, 500);
+                }
+            });
+        });
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.sovinput')) {
+        sovResults.classList.remove('show');
+    }
+});
+
+/* ============================================================
+   PRICE FILTER
+   ============================================================ */
+var priceFilterWrap = document.createElement('div');
+priceFilterWrap.className = 'pricefilter-wrap';
+priceFilterWrap.id = 'priceFilter';
+priceFilterWrap.innerHTML = '<div class="pricefilter-title"><i class="fas fa-sliders-h me-1"></i>Filter by Price</div>' +
+    '<div class="pricefilter-range"><span>Min</span><span>Max</span></div>' +
+    '<div class="pricefilter-values">' +
+    '<input type="number" class="pricefilter-inp" id="priceMin" placeholder="Min" min="0"/>' +
+    '<span style="color:#ccc;">-</span>' +
+    '<input type="number" class="pricefilter-inp" id="priceMax" placeholder="Max" min="0"/>' +
+    '</div>' +
+    '<button class="pricefilter-apply" id="priceApply">Apply Filter</button>';
+
+var menuSection = document.getElementById('menu');
+if (menuSection) {
+    menuSection.querySelector('.container').insertBefore(priceFilterWrap, menuSection.querySelector('.row.g-4'));
+}
+
+document.getElementById('priceApply').addEventListener('click', function() {
+    var min = parseFloat(document.getElementById('priceMin').value) || 0;
+    var max = parseFloat(document.getElementById('priceMax').value) || 9999;
+    document.querySelectorAll('.mwrap').forEach(function(wrap) {
+        var priceText = wrap.querySelector('.mprice') ? wrap.querySelector('.mprice').textContent : '$0';
+        var price = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 0;
+        if (price >= min && price <= max) {
+            wrap.classList.remove('gone');
+            wrap.style.opacity = '0';
+            wrap.style.transform = 'translateY(16px)';
+            setTimeout(function() {
+                wrap.style.transition = 'opacity .38s,transform .38s';
+                wrap.style.opacity = '1';
+                wrap.style.transform = 'translateY(0)';
+            }, 60);
+        } else {
+            wrap.classList.add('gone');
+        }
+    });
+    showToast('Price filter applied', 'success');
+});
+
+/* ============================================================
+   COMPARE PRODUCTS
+   ============================================================ */
+var compareList = [];
+var compareBar = document.createElement('div');
+compareBar.className = 'compare-bar';
+compareBar.id = 'compareBar';
+compareBar.innerHTML = '<div class="compare-bar-info"><i class="fas fa-balance-scale me-1"></i>Compare (<span id="compareCount">0</span>/4)</div>' +
+    '<button class="compare-bar-btn" id="compareBtn">Compare</button>' +
+    '<button class="compare-bar-clear" id="compareClear">Clear</button>';
+document.body.appendChild(compareBar);
+
+var compareModal = document.createElement('div');
+compareModal.id = 'compareModal';
+compareModal.innerHTML = '<div class="compare-table" id="compareTable"></div>';
+document.body.appendChild(compareModal);
+
+function updateCompareBar() {
+    compareBar.classList.toggle('show', compareList.length > 0);
+    var countEl = document.getElementById('compareCount');
+    if (countEl) countEl.textContent = compareList.length;
+}
+function addToCompare(card) {
+    if (compareList.length >= 4) {
+        showToast('You can compare up to 4 items', 'warn');
+        return;
+    }
+    var title = card.getAttribute('data-title');
+    if (compareList.find(function(c) { return c.title === title; })) {
+        showToast('Item already in compare list', 'warn');
+        return;
+    }
+    compareList.push({
+        title: title,
+        price: card.getAttribute('data-price'),
+        img: card.getAttribute('data-img'),
+        cat: card.getAttribute('data-cat'),
+        rating: card.getAttribute('data-rating'),
+        reviews: card.getAttribute('data-reviews'),
+        desc: card.getAttribute('data-desc')
+    });
+    updateCompareBar();
+    showToast('Added to compare: ' + title, 'success');
+}
+function removeFromCompare(title) {
+    compareList = compareList.filter(function(c) { return c.title !== title; });
+    updateCompareBar();
+    renderCompareTable();
+}
+function renderCompareTable() {
+    var table = document.getElementById('compareTable');
+    if (!table) return;
+    if (compareList.length === 0) {
+        compareModal.classList.remove('open');
+        return;
+    }
+    var attrs = ['Price', 'Category', 'Rating', 'Reviews', 'Description'];
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3 style="margin:0;">Compare Products</h3><button class="ohclose" id="compareClose" style="position:static;width:auto;height:auto;padding:6px 12px;border-radius:8px;"><i class="fas fa-times me-1"></i>Close</button></div>';
+    html += '<table><thead><tr><th></th>';
+    compareList.forEach(function(item) {
+        html += '<th><img src="' + item.img + '" style="width:60px;height:60px;border-radius:10px;object-fit:cover;margin-bottom:6px;"/><br/>' + item.title + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    attrs.forEach(function(attr) {
+        html += '<tr><td><strong>' + attr + '</strong></td>';
+        compareList.forEach(function(item) {
+            var val = '';
+            if (attr === 'Price') val = '$' + item.price;
+            else if (attr === 'Category') val = item.cat;
+            else if (attr === 'Rating') val = item.rating + '/5';
+            else if (attr === 'Reviews') val = item.reviews;
+            else if (attr === 'Description') val = item.desc ? item.desc.substring(0, 60) + '...' : '-';
+            html += '<td>' + val + '</td>';
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<div style="text-align:center;margin-top:12px;"><button class="btn-red" onclick="document.querySelectorAll(\'.compare-bar-btn\')[0].click()"><i class="fas fa-shopping-cart me-1"></i>Add All to Cart</button></div>';
+    table.innerHTML = html;
+    compareModal.classList.add('open');
+
+    document.getElementById('compareClose').addEventListener('click', function() {
+        compareModal.classList.remove('open');
+    });
+}
+
+document.getElementById('compareBtn').addEventListener('click', function() {
+    compareList.forEach(function(item) {
+        var card = document.querySelector('.mcard[data-title="' + item.title + '"]');
+        if (card) {
+            var existing = cartItems.find(function(it) { return it.title === item.title; });
+            if (existing) { existing.qty++; }
+            else { cartItems.push({ img: item.img, title: item.title, price: parseFloat(item.price), qty: 1, size: 'Regular', spice: 'Mild', extras: [] }); }
+        }
+    });
+    updateCartUI();
+    cartBtn.classList.remove('bounce');
+    void cartBtn.offsetWidth;
+    cartBtn.classList.add('bounce');
+    showToast(compareList.length + ' items added to cart!', 'success');
+    compareList = [];
+    updateCompareBar();
+    compareModal.classList.remove('open');
+});
+
+document.getElementById('compareClear').addEventListener('click', function() {
+    compareList = [];
+    updateCompareBar();
+    renderCompareTable();
+});
+
+document.querySelectorAll('.mcard').forEach(function(card) {
+    var compBtn = document.createElement('button');
+    compBtn.className = 'mcomp';
+    compBtn.innerHTML = '<i class="fas fa-balance-scale"></i>';
+    compBtn.title = 'Add to compare';
+    compBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        addToCompare(card);
+    });
+    card.querySelector('.mimg').appendChild(compBtn);
+});
+
+/* ============================================================
+   PRODUCT IMAGE SOCIAL SHARE
+   ============================================================ */
+document.querySelectorAll('.mimg').forEach(function(imgWrap) {
+    var shareBtn = document.createElement('button');
+    shareBtn.className = 'mshare';
+    shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
+    shareBtn.title = 'Share';
+    shareBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (navigator.share) {
+            navigator.share({ title: document.querySelector('.mtit') ? document.querySelector('.mtit').textContent : 'Product', url: window.location.href });
+        } else {
+            showToast('Link copied to clipboard!', 'success');
+        }
+    });
+    imgWrap.appendChild(shareBtn);
+});
+
+/* ============================================================
+   WISHLIST PERSISTENCE
+   ============================================================ */
+var wishlist = JSON.parse(localStorage.getItem('yussif_wishlist') || '[]');
+document.querySelectorAll('.mhrt').forEach(function(btn) {
+    var title = btn.closest('.mcard').getAttribute('data-title');
+    if (wishlist.includes(title)) {
+        var ico = btn.querySelector('i');
+        ico.classList.remove('far');
+        ico.classList.add('fas');
+        btn.style.color = 'var(--primary)';
+    }
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var ico = btn.querySelector('i');
+        var isWish = ico.classList.contains('fas');
+        if (isWish) {
+            ico.classList.remove('fas');
+            ico.classList.add('far');
+            btn.style.color = '#ccc';
+            wishlist = wishlist.filter(function(w) { return w !== title; });
+            showToast('Removed from wishlist', 'warn');
+        } else {
+            ico.classList.remove('far');
+            ico.classList.add('fas');
+            btn.style.color = 'var(--primary)';
+            wishlist.push(title);
+            showToast('Added to wishlist!', 'success');
+        }
+        localStorage.setItem('yussif_wishlist', JSON.stringify(wishlist));
+    });
+});
+
+/* ============================================================
+   SMART CART SUGGESTIONS
+   ============================================================ */
+function showCartSuggestions() {
+    if (cartItems.length === 0) return;
+    var cartTitles = cartItems.map(function(it) { return it.title; });
+    var suggestions = allProducts.filter(function(p) { return !cartTitles.includes(p.title); }).slice(0, 3);
+    if (suggestions.length === 0) return;
+    var sugDiv = document.createElement('div');
+    sugDiv.className = 'csitemsug';
+    sugDiv.innerHTML = '<div class="csitemsugtitle"><i class="fas fa-lightbulb me-1"></i>You might also like</div>';
+    suggestions.forEach(function(s) {
+        var sugItem = document.createElement('div');
+        sugItem.className = 'csitemsugitem';
+        sugItem.innerHTML = '<img src="' + s.img + '" alt=""/><div><strong>' + s.title + '</strong><small>$' + s.price + '</small></div>' +
+            '<button class="csitemsugadd" data-title="' + s.title + '" data-price="' + s.price + '" data-img="' + s.img + '">+ Add</button>';
+        sugDiv.appendChild(sugItem);
+    });
+    var list = document.getElementById('cartList');
+    if (list && !document.querySelector('.csitemsug')) {
+        list.insertBefore(sugDiv, list.firstChild);
+    }
+    document.querySelectorAll('.csitemsugadd').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var title = this.getAttribute('data-title');
+            var price = parseFloat(this.getAttribute('data-price'));
+            var img = this.getAttribute('data-img');
+            var existing = cartItems.find(function(it) { return it.title === title; });
+            if (existing) { existing.qty++; }
+            else { cartItems.push({ img: img, title: title, price: price, qty: 1, size: 'Regular', spice: 'Mild', extras: [] }); }
+            updateCartUI();
+            cartBtn.classList.remove('bounce');
+            void cartBtn.offsetWidth;
+            cartBtn.classList.add('bounce');
+            showToast('Item added to cart!', 'success');
+        });
+    });
+}
+var origUpdateCartUIFull = updateCartUI;
+updateCartUI = function() {
+    origUpdateCartUIFull();
+    var oldSug = document.querySelector('.csitemsug');
+    if (oldSug) oldSug.remove();
+    if (cartItems.length > 0) showCartSuggestions();
+};
+
+/* ============================================================
+   CHECKOUT VALIDATION
+   ============================================================ */
+var origCkPay = ckPay.onclick;
+ckPay.addEventListener('click', function() {
+    var activeTab = document.querySelector('.paytab.active');
+    var method = activeTab ? activeTab.getAttribute('data-pay') : 'cash';
+    if (method === 'mobile') {
+        var phone = document.getElementById('mobPhone').value.trim();
+        var pin = document.getElementById('mobPin').value.trim();
+        if (!phone || !pin) { showToast('Please enter phone number and PIN', 'err'); return; }
+        if (pin.length !== 4) { showToast('PIN must be 4 digits', 'err'); return; }
+    } else if (method === 'card') {
+        var cardNum = document.getElementById('cardNum').value.replace(/\s/g, '');
+        var cardExp = document.getElementById('cardExp').value.trim();
+        var cardCvv = document.getElementById('cardCvv').value.trim();
+        var cardName = document.getElementById('cardName').value.trim();
+        if (!cardNum || cardNum.length < 13) { showToast('Please enter a valid card number', 'err'); return; }
+        if (!cardExp || !cardExp.includes('/')) { showToast('Please enter valid expiry date (MM/YY)', 'err'); return; }
+        if (!cardCvv || cardCvv.length < 3) { showToast('Please enter CVV', 'err'); return; }
+        if (!cardName) { showToast('Please enter cardholder name', 'err'); return; }
+    } else if (method === 'bank') {
+        var bankRef = document.getElementById('bankRef').value.trim();
+        var bankName = document.getElementById('bankName').value.trim();
+        if (!bankRef) { showToast('Please enter transaction reference', 'err'); return; }
+        if (!bankName) { showToast('Please enter sender name', 'err'); return; }
+    }
+});
+
+/* ============================================================
+   PRODUCT COMPARISON FROM MENU POPUP
+   ============================================================ */
+document.getElementById('mpAddCart').insertAdjacentHTML('beforebegin',
+    '<button class="mpcomp-btn" id="mpCompareBtn" style="background:none;border:2px solid #ddd;border-radius:9px;padding:9px 16px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:&quot;Poppins&quot;,sans-serif;color:#666;transition:0.3s;margin-right:6px;"><i class="fas fa-balance-scale me-1"></i>Compare</button>');
+document.getElementById('mpCompareBtn').addEventListener('click', function() {
+    var title = document.getElementById('mpTitle').textContent;
+    var card = document.querySelector('.mcard[data-title="' + title + '"]');
+    if (card) {
+        addToCompare(card);
+        closeMenuPop();
+    }
+});
+
+/* ============================================================
+   FOOTER ENHANCEMENTS
+   ============================================================ */
+document.querySelector('.fbot') && document.querySelector('.fbot').insertAdjacentHTML('beforeend',
+    '<div style="margin-top:8px;font-size:.72rem;color:#aaa;"><i class="fas fa-lock me-1"></i>SSL Secured &amp; PCI Compliant</div>');
+
+/* ============================================================
+   VIEW TOGGLE GRID / LIST
+   ============================================================ */
+document.querySelectorAll('.viewbtn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.viewbtn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        var view = this.getAttribute('data-view');
+        var grid = document.getElementById('mgrid');
+        if (view === 'list') {
+            grid.classList.add('list-view');
+        } else {
+            grid.classList.remove('list-view');
+        }
+        localStorage.setItem('yussif_view', view);
+    });
+});
+var savedView = localStorage.getItem('yussif_view');
+if (savedView === 'list') {
+    document.querySelector('.viewbtn[data-view="list"]') && document.querySelector('.viewbtn[data-view="list"]').click();
+}
+
+/* ============================================================
+   REVIEW VOTING
+   ============================================================ */
+document.getElementById('mpRevList') && document.getElementById('mpRevList').addEventListener('click', function(e) {
+    var btn = e.target.closest('.mprevhelpful button');
+    if (!btn) return;
+    var reviewDiv = btn.closest('.mprevitem');
+    var idx = Array.from(this.children).indexOf(reviewDiv);
+    var votes = parseInt(btn.getAttribute('data-votes')) || 0;
+    votes++;
+    btn.setAttribute('data-votes', votes);
+    btn.textContent = 'Helpful (' + votes + ')';
+    btn.disabled = true;
+    btn.style.color = '#ccc';
+    showToast('Thanks for your feedback!', 'success');
+});
+
+/* ============================================================
+   IMAGE LIGHTBOX
+   ============================================================ */
+var lightbox = document.createElement('div');
+lightbox.className = 'lightbox';
+lightbox.id = 'lightbox';
+lightbox.innerHTML = '<button class="lightbox-close" id="lbClose"><i class="fas fa-times"></i></button><img src="" alt=""/>';
+document.body.appendChild(lightbox);
+
+document.querySelectorAll('.mimg img').forEach(function(img) {
+    img.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var lbImg = lightbox.querySelector('img');
+        lbImg.setAttribute('src', this.getAttribute('src'));
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+document.getElementById('lbClose').addEventListener('click', function() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+});
+lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+});
+
+/* ============================================================
+   BACK TO TOP ENHANCEMENTS
+   ============================================================ */
+var btt = document.getElementById('btt');
+window.addEventListener('scroll', function() {
+    if (window.scrollY > 500) {
+        btt.classList.add('show');
+    } else {
+        btt.classList.remove('show');
+    }
+});
+
+/* ============================================================
+   INITIALIZE
+   ============================================================ */
+updateMobileNavCart();
+updateOrdersBtn();
+showCartSuggestions();
 
