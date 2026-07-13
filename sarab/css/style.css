@@ -5315,3 +5315,33 @@ footer {
    border-color: var(--primary) !important;
 }
 
+/* ===================== WHATSAPP FLOATING BUTTON ===================== */
+.wafloat {
+   position: fixed;
+   bottom: 90px;
+   right: 28px;
+   z-index: 99999;
+   width: 58px;
+   height: 58px;
+   border-radius: 50%;
+   background: #25D366;
+   color: #fff;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 1.7rem;
+   box-shadow: 0 8px 28px rgba(37, 211, 102, 0.45);
+   transition: 0.3s;
+   animation: waPulse 2.5s ease-in-out infinite;
+}
+.wafloat:hover {
+   transform: translateY(-4px) scale(1.06);
+   box-shadow: 0 14px 34px rgba(37, 211, 102, 0.6);
+   color: #fff;
+}
+@keyframes waPulse {
+   0%,100% { box-shadow: 0 8px 28px rgba(37, 211, 102, 0.45); }
+   50% { box-shadow: 0 8px 40px rgba(37, 211, 102, 0.7); }
+}
+
+

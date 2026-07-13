@@ -636,38 +636,70 @@ document.getElementById('mpAddCart').addEventListener('click', function() {
 
 
 /* ============================================================
-   RESERVATION & CONTACT
+   RESERVATION & CONTACT  (delivered to email via Formspree)
    ============================================================ */
+var FORMSPREE_ENDPOINT = 'https://formspree.io/f/xrengywr';
+
+function sendToFormspree(btn, defaultHtml, buildData, onDone) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    btn.disabled = true;
+    var fd = buildData();
+    fetch(FORMSPREE_ENDPOINT, {
+        method: 'POST',
+        body: fd,
+        headers: { 'Accept': 'application/json' }
+    }).then(function(res) {
+        if (!res.ok) throw new Error('Network response was not ok');
+        return res.json();
+    }).then(function() {
+        btn.innerHTML = defaultHtml;
+        btn.disabled = false;
+        onDone();
+    }).catch(function() {
+        btn.innerHTML = defaultHtml;
+        btn.disabled = false;
+        if (typeof showToast === 'function') {
+            showToast('Something went wrong. Please try again or email us directly.', 'err');
+        } else {
+            alert('Something went wrong. Please try again or email us directly.');
+        }
+    });
+}
+
 document.getElementById('resBtn').addEventListener('click', function() {
     var btn = this;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Booking...';
-    btn.disabled = true;
-    setTimeout(function() {
-        btn.innerHTML = '<i class="fas fa-calendar-check"></i> Confirm Reservation';
-        btn.disabled = false;
+    var fd = new FormData();
+    fd.append('_subject', 'New Table Reservation - Richy\'s Eat');
+    fd.append('form_type', 'Reservation');
+    fd.append('name', (document.getElementById('resName') || {}).value || '');
+    fd.append('email', (document.getElementById('resEmail') || {}).value || '');
+    fd.append('phone', (document.getElementById('resPhone') || {}).value || '');
+    fd.append('guests', (document.getElementById('resGuests') || {}).value || '');
+    fd.append('date', (document.getElementById('resDate') || {}).value || '');
+    fd.append('time', (document.getElementById('resTime') || {}).value || '');
+    fd.append('special_requests', (document.getElementById('resNotes') || {}).value || '');
+    sendToFormspree(btn, '<i class="fas fa-calendar-check"></i> Confirm Reservation', function() { return fd; }, function() {
         var ok = document.getElementById('resOk');
         ok.style.display = 'block';
-        ok.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-        });
-    }, 1500);
+        ok.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 });
 
 document.getElementById('ctcBtn').addEventListener('click', function() {
     var btn = this;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-    btn.disabled = true;
-    setTimeout(function() {
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
-        btn.disabled = false;
+    var fd = new FormData();
+    fd.append('_subject', 'New Contact Message - Richy\'s Eat');
+    fd.append('form_type', 'Contact');
+    fd.append('name', (document.getElementById('ctcName') || {}).value || '');
+    fd.append('email', (document.getElementById('ctcEmail') || {}).value || '');
+    fd.append('phone', (document.getElementById('ctcPhone') || {}).value || '');
+    fd.append('subject', (document.getElementById('ctcSubject') || {}).value || '');
+    fd.append('message', (document.getElementById('ctcMessage') || {}).value || '');
+    sendToFormspree(btn, '<i class="fas fa-paper-plane"></i> Send Message', function() { return fd; }, function() {
         var ok = document.getElementById('ctcOk');
         ok.style.display = 'block';
-        ok.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest'
-        });
-    }, 1500);
+        ok.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
 });
 
 
