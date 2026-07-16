@@ -177,6 +177,325 @@ function showToast(message, type) {
 }
 
 /* ============================================================
+   AUTH SYSTEM (LOGIN / SIGN UP / LOGOUT)
+   Requires sign in before ordering food.
+   ============================================================ */
+var AUTH_USER_KEY = 'yussif_user';
+var AUTH_USERS_KEY = 'yussif_users';
+
+function getAuthUser() {
+    try {
+        var u = localStorage.getItem(AUTH_USER_KEY);
+        return u ? JSON.parse(u) : null;
+    } catch (e) { return null; }
+}
+function isLoggedIn() { return !!getAuthUser(); }
+
+/* True only when a real Firebase user is signed in (for Firestore writes) */
+function authCurrentUid() {
+    return !!(window.YussifAuthCurrentUid && window.YussifAuthCurrentUid());
+}
+
+function setAuthUser(user) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    renderAuthUI();
+}
+function clearAuthUser() {
+    localStorage.removeItem(AUTH_USER_KEY);
+    renderAuthUI();
+}
+function getUsers() {
+    try {
+        var u = localStorage.getItem(AUTH_USERS_KEY);
+        return u ? JSON.parse(u) : [];
+    } catch (e) { return []; }
+}
+function saveUsers(users) {
+    localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+}
+
+var authModal = document.getElementById('authModal');
+var authCvr = document.getElementById('authCvr');
+
+function openAuth(tab) {
+    if (tab === 'signup') showAuthTab('signup');
+    authModal.classList.add('open');
+    authCvr.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeAuth() {
+    authModal.classList.remove('open');
+    authCvr.classList.remove('show');
+    document.body.style.overflow = '';
+    clearAuthMsgs();
+}
+function showAuthTab(tab) {
+    document.querySelectorAll('.authtab').forEach(function(t) {
+        t.classList.toggle('active', t.getAttribute('data-tab') === tab);
+    });
+    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+    clearAuthMsgs();
+}
+function clearAuthMsgs() {
+    document.getElementById('loginMsg').textContent = '';
+    document.getElementById('signupMsg').textContent = '';
+}
+function authMsg(form, type, text) {
+    var el = document.getElementById(form === 'login' ? 'loginMsg' : 'signupMsg');
+    el.textContent = text;
+    el.className = 'authmsg ' + (type || '');
+}
+
+document.querySelectorAll('.authtab').forEach(function(t) {
+    t.addEventListener('click', function() {
+        showAuthTab(this.getAttribute('data-tab'));
+    });
+});
+document.getElementById('authClose').addEventListener('click', closeAuth);
+authCvr.addEventListener('click', closeAuth);
+
+document.getElementById('loginBtn').addEventListener('click', function() { openAuth('login'); });
+document.getElementById('signupBtn').addEventListener('click', function() { openAuth('signup'); });
+
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    if (window.YussifAuth) {
+        window.YussifAuth.logout()
+            .then(function() {
+                localStorage.removeItem(AUTH_USER_KEY);
+                renderAuthUI();
+                showToast('Logged out successfully', 'success');
+                if (cartOpen) { cartOpen = false; cartSide.classList.remove('open'); csCvr.classList.remove('show'); document.body.style.overflow = ''; }
+            })
+            .catch(function() { showToast('Logout failed', 'err'); });
+    } else {
+        clearAuthUser();
+        showToast('Logged out successfully', 'success');
+        if (cartOpen) { cartOpen = false; cartSide.classList.remove('open'); csCvr.classList.remove('show'); document.body.style.overflow = ''; }
+    }
+});
+
+/* Login submit */
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = document.getElementById('logEmail').value.trim().toLowerCase();
+    var pass = document.getElementById('logPass').value;
+    if (!email || !pass) { authMsg('login', 'err', 'Please fill in all fields'); return; }
+
+    if (window.YussifAuth) {
+        window.YussifAuth.login(email, pass)
+            .then(function() {
+                authMsg('login', 'ok', 'Login successful!');
+                showToast('Welcome back!', 'success');
+                setTimeout(closeAuth, 600);
+            })
+            .catch(function(err) {
+                authMsg('login', 'err', firebaseErr(err));
+            });
+        return;
+    }
+
+    var users = getUsers();
+    var found = users.find(function(u) { return u.email === email; });
+    if (!found) { authMsg('login', 'err', 'No account found. Please sign up.'); return; }
+    if (found.password !== pass) { authMsg('login', 'err', 'Incorrect password. Try again.'); return; }
+    setAuthUser({ name: found.name, email: found.email, phone: found.phone || '' });
+    authMsg('login', 'ok', 'Login successful!');
+    showToast('Welcome back, ' + found.name + '!', 'success');
+    setTimeout(closeAuth, 600);
+});
+
+/* Sign up submit */
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var name = document.getElementById('suName').value.trim();
+    var email = document.getElementById('suEmail').value.trim().toLowerCase();
+    var phone = document.getElementById('suPhone').value.trim();
+    var pass = document.getElementById('suPass').value;
+    if (!name || !email || !pass) { authMsg('signup', 'err', 'Please fill in all required fields'); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { authMsg('signup', 'err', 'Please enter a valid email'); return; }
+    if (pass.length < 6) { authMsg('signup', 'err', 'Password must be at least 6 characters'); return; }
+
+    if (window.YussifAuth) {
+        window.YussifAuth.signUp(name, email, pass)
+            .then(function() {
+                authMsg('signup', 'ok', 'Account created!');
+                showToast('Account created. Welcome, ' + name + '!', 'success');
+                setTimeout(closeAuth, 600);
+            })
+            .catch(function(err) {
+                authMsg('signup', 'err', firebaseErr(err));
+            });
+        return;
+    }
+
+    var users = getUsers();
+    if (users.find(function(u) { return u.email === email; })) {
+        authMsg('signup', 'err', 'An account with this email already exists'); return;
+    }
+    users.push({ name: name, email: email, phone: phone, password: pass });
+    saveUsers(users);
+    setAuthUser({ name: name, email: email, phone: phone });
+    authMsg('signup', 'ok', 'Account created!');
+    showToast('Account created. Welcome, ' + name + '!', 'success');
+    setTimeout(closeAuth, 600);
+});
+
+/* Human-readable Firebase error messages */
+function firebaseErr(err) {
+    var code = (err && err.code) ? err.code : '';
+    switch (code) {
+        case 'auth/email-already-in-use': return 'An account with this email already exists';
+        case 'auth/invalid-email': return 'Please enter a valid email';
+        case 'auth/weak-password': return 'Password must be at least 6 characters';
+        case 'auth/user-not-found': return 'No account found. Please sign up.';
+        case 'auth/wrong-password': return 'Incorrect password. Try again.';
+        case 'auth/invalid-credential': return 'Incorrect email or password.';
+        case 'auth/too-many-requests': return 'Too many attempts. Try again later.';
+        case 'auth/operation-not-allowed': return 'This sign-in method is not enabled in Firebase.';
+        case 'auth/unauthorized-domain': return 'Add this site domain to Firebase -> Authentication -> Authorized domains.';
+        case 'auth/missing-email': return 'Please enter your email address.';
+        case 'auth/user-disabled': return 'This account has been disabled. Contact support.';
+        default: return (err && err.message) ? err.message : 'Something went wrong. Please try again.';
+    }
+}
+
+/* ---------- FORGOT PASSWORD ---------- */
+function showResetPanel() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'none';
+    document.querySelectorAll('.authtab').forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('resetForm').style.display = 'block';
+    clearAuthMsgs();
+    setTimeout(function() { document.getElementById('resetEmail').focus(); }, 50);
+}
+function hideResetPanel() {
+    document.getElementById('resetForm').style.display = 'none';
+    showAuthTab('login');
+}
+
+var forgotLink = document.getElementById('forgotLink');
+if (forgotLink) forgotLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    showResetPanel();
+});
+var resetBack = document.getElementById('resetBack');
+if (resetBack) resetBack.addEventListener('click', function() { hideResetPanel(); });
+
+document.getElementById('resetForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    var msg = document.getElementById('resetMsg');
+    if (!email) { msg.textContent = 'Please enter your email'; msg.className = 'authmsg err'; return; }
+    if (location.protocol === 'file:') {
+        msg.textContent = 'Password reset needs http://localhost or https (not a file).';
+        msg.className = 'authmsg err';
+        return;
+    }
+    if (!window.YussifAuth) { msg.textContent = 'Firebase is not configured'; msg.className = 'authmsg err'; return; }
+    var btn = this.querySelector('.authsubmit');
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    window.YussifAuth.resetPassword(email)
+        .then(function() {
+            msg.textContent = 'Reset link sent! Check your email (' + email + ').';
+            msg.className = 'authmsg ok';
+            btn.innerHTML = orig;
+            btn.disabled = false;
+            showToast('Password reset email sent!', 'success');
+        })
+        .catch(function(err) {
+            msg.textContent = firebaseErr(err);
+            msg.className = 'authmsg err';
+            btn.innerHTML = orig;
+            btn.disabled = false;
+        });
+});
+
+/* Social sign-in (Google / GitHub) — works for both login & sign up */
+function socialLogin(provider, btn, label) {
+    if (!window.YussifAuth) { showToast('Firebase is not configured', 'err'); return; }
+    if (location.protocol === 'file:') {
+        showToast('Social sign-in needs http://localhost or https (not a file).', 'err');
+        authMsg('login', 'err', 'Serve the site over http://localhost or https to use ' + label + '.');
+        return;
+    }
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' + label + '...';
+    window.YussifAuth['loginWith' + provider]()
+        .then(function() {
+            authMsg('login', 'ok', label + ' sign-in successful!');
+            showToast('Welcome, ' + label + ' user!', 'success');
+            setTimeout(closeAuth, 500);
+        })
+        .catch(function(err) {
+            authMsg('login', 'err', firebaseErr(err));
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        });
+}
+var googleBtn = document.getElementById('googleBtn');
+var githubBtn = document.getElementById('githubBtn');
+if (googleBtn) googleBtn.addEventListener('click', function() { socialLogin('Google', this, 'Google'); });
+if (githubBtn) githubBtn.addEventListener('click', function() { socialLogin('Github', this, 'GitHub'); });
+
+/* Keep UI in sync with Firebase auth state when available.
+   firebase.js is a module (deferred), so YussifAuth may not exist yet
+   when this classic script first runs. Wait briefly for it. */
+(function waitForFirebase() {
+    if (window.YussifAuth) {
+        window.YussifAuth.onState(function(user) {
+            if (user) {
+                localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+                if (window.YussifFirestore) {
+                    window.YussifFirestore.saveProfile({ name: user.name, email: user.email }).catch(function() {});
+                }
+                if (window.YussifFirestore) loadAddrFromFirestore();
+            } else {
+                localStorage.removeItem(AUTH_USER_KEY);
+            }
+            renderAuthUI();
+        });
+        /* Resolve any redirect-based sign-in (e.g. popup blocked -> redirect) */
+        window.YussifAuth.handleRedirect().then(function() { /* UI synced via onState */ });
+    } else {
+        setTimeout(waitForFirebase, 60);
+    }
+})();
+
+/* ESC closes auth */
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && authModal.classList.contains('open')) closeAuth();
+});
+
+function renderAuthUI() {
+    var user = getAuthUser();
+    var authArea = document.getElementById('authArea');
+    var userArea = document.getElementById('userArea');
+    if (user) {
+        authArea.style.display = 'none';
+        userArea.style.display = 'flex';
+        document.getElementById('userName').textContent = user.name.split(' ')[0];
+        document.getElementById('udName').textContent = user.name;
+        document.getElementById('udEmail').textContent = user.email;
+    } else {
+        authArea.style.display = 'flex';
+        userArea.style.display = 'none';
+    }
+}
+renderAuthUI();
+
+/* Gate: require login before checkout/pay */
+function requireAuth(action) {
+    if (isLoggedIn()) return true;
+    openAuth(action === 'signup' ? 'signup' : 'login');
+    showToast('Please login or sign up to continue', 'warn');
+    return false;
+}
+
+/* ============================================================
    CART, CHECKOUT & PAYMENT SYSTEM
    ============================================================ */
 var FREE_DELIVERY_THRESHOLD = 30;
@@ -278,6 +597,19 @@ function updateCartUI() {
         csDiscRow.style.display = 'none';
         var ex = csList.querySelectorAll('.csitem');
         ex.forEach(function(e) { e.remove(); });
+        var oldLogin = document.getElementById('csLoginNotice');
+        if (oldLogin) oldLogin.remove();
+        if (!isLoggedIn()) {
+            var loginNotice = document.createElement('div');
+            loginNotice.id = 'csLoginNotice';
+            loginNotice.className = 'cslogin';
+            loginNotice.innerHTML = '<i class="fas fa-user-lock"></i><p>Sign in to start ordering your favorite food.</p>' +
+                '<div class="auth-cta"><button class="csprobtn" id="csLoginBtn" style="background:var(--primary);color:#fff;">Login</button>' +
+                '<button class="csprobtn" id="csSignupBtn" style="background:var(--secondary);color:#222;">Sign Up</button></div>';
+            csList.appendChild(loginNotice);
+            document.getElementById('csLoginBtn').addEventListener('click', function() { openAuth('login'); });
+            document.getElementById('csSignupBtn').addEventListener('click', function() { openAuth('signup'); });
+        }
     } else {
         csEmpty.style.display = 'none';
         csFoot.style.display = 'block';
@@ -392,6 +724,7 @@ loadCart();
 updateCartUI();
 
 cartBtn.addEventListener('click', function() {
+    if (!requireAuth('login')) return;
     cartOpen = !cartOpen;
     cartSide.classList.toggle('open', cartOpen);
     csCvr.classList.toggle('show', cartOpen);
@@ -596,6 +929,7 @@ document.getElementById('mpMinus').addEventListener('click', function() {
 
 /* Add to cart with customization */
 document.getElementById('mpAddCart').addEventListener('click', function() {
+    if (!requireAuth('login')) return;
     var card = document.querySelector('.mcard[data-title="' + document.getElementById('mpTitle').textContent + '"]') ||
                document.querySelector('.mcard');
     var img = card ? (card.getAttribute('data-img') || 'img/menu/1.jpg') : 'img/menu/1.jpg';
@@ -671,17 +1005,35 @@ document.getElementById('resBtn').addEventListener('click', function() {
     var fd = new FormData();
     fd.append('_subject', 'New Table Reservation - Richy\'s Eat');
     fd.append('form_type', 'Reservation');
-    fd.append('name', (document.getElementById('resName') || {}).value || '');
-    fd.append('email', (document.getElementById('resEmail') || {}).value || '');
-    fd.append('phone', (document.getElementById('resPhone') || {}).value || '');
-    fd.append('guests', (document.getElementById('resGuests') || {}).value || '');
-    fd.append('date', (document.getElementById('resDate') || {}).value || '');
-    fd.append('time', (document.getElementById('resTime') || {}).value || '');
-    fd.append('special_requests', (document.getElementById('resNotes') || {}).value || '');
+    var name = (document.getElementById('resName') || {}).value || '';
+    var email = (document.getElementById('resEmail') || {}).value || '';
+    var phone = (document.getElementById('resPhone') || {}).value || '';
+    var guests = (document.getElementById('resGuests') || {}).value || '';
+    var date = (document.getElementById('resDate') || {}).value || '';
+    var time = (document.getElementById('resTime') || {}).value || '';
+    var notes = (document.getElementById('resNotes') || {}).value || '';
+    fd.append('name', name);
+    fd.append('email', email);
+    fd.append('phone', phone);
+    fd.append('guests', guests);
+    fd.append('date', date);
+    fd.append('time', time);
+    fd.append('special_requests', notes);
     sendToFormspree(btn, '<i class="fas fa-calendar-check"></i> Confirm Reservation', function() { return fd; }, function() {
         var ok = document.getElementById('resOk');
         ok.style.display = 'block';
         ok.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (window.YussifFirestore) {
+            window.YussifFirestore.saveReservation({
+                name: name,
+                email: email,
+                phone: phone,
+                guests: guests,
+                date: date,
+                time: time,
+                notes: notes
+            }).catch(function() {});
+        }
     });
 });
 
@@ -840,6 +1192,7 @@ function renderRecent() {
     document.querySelectorAll('.rcard .radd').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
+            if (!requireAuth('login')) return;
             var title = this.getAttribute('data-title');
             var price = parseFloat(this.getAttribute('data-price'));
             var img = this.getAttribute('data-img');
@@ -972,6 +1325,7 @@ window.addEventListener('scroll', function() {
 document.querySelectorAll('.psadd').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
+        if (!requireAuth('login')) return;
         var card = this.closest('.pscard');
         var title = card.getAttribute('data-title');
         var price = parseFloat(card.getAttribute('data-price'));
@@ -996,6 +1350,7 @@ document.querySelectorAll('.psadd').forEach(function(btn) {
 document.querySelectorAll('.dealadd').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
+        if (!requireAuth('login')) return;
         var title = this.getAttribute('data-title');
         var price = parseFloat(this.getAttribute('data-price'));
         var img = this.getAttribute('data-img');
@@ -1131,6 +1486,7 @@ var ckCvr = document.getElementById('ckCvr');
 var ckPay = document.getElementById('ckPay');
 
 csCheck.addEventListener('click', function() {
+    if (!requireAuth('login')) return;
     if (cartItems.length === 0) {
         showToast('Your cart is empty!', 'err');
         return;
@@ -1444,16 +1800,49 @@ function saveOrder(items, total, method) {
     var orderId = 'SB-' + Math.floor(1000 + Math.random() * 9000);
     var statuses = ['Order Received', 'Preparing', 'Out for Delivery', 'Delivered'];
     var statusIdx = 0;
+    var user = getAuthUser();
+
+    var payment = { method: method };
+    if (method === 'mobile') {
+        payment.provider = (document.querySelector('input[name="mob"]:checked') || {}).value || '';
+        payment.phone = (document.getElementById('mobPhone') || {}).value || '';
+    } else if (method === 'card') {
+        payment.cardLast4 = ((document.getElementById('cardNum') || {}).value || '').replace(/\s/g, '').slice(-4);
+        payment.cardName = (document.getElementById('cardName') || {}).value || '';
+    } else if (method === 'bank') {
+        payment.bankRef = (document.getElementById('bankRef') || {}).value || '';
+        payment.bankName = (document.getElementById('bankName') || {}).value || '';
+    }
+
     var order = {
         id: orderId,
-        items: items.map(function(it) { return it.title + (it.size && it.size !== 'Regular' ? ' (' + it.size + ')' : '') + ' x' + it.qty; }),
-        total: '$' + total.toFixed(2),
+        items: items.map(function(it) {
+            return {
+                title: it.title,
+                qty: it.qty,
+                price: it.price,
+                size: it.size,
+                spice: it.spice,
+                extras: it.extras
+            };
+        }),
+        itemLines: items.map(function(it) { return it.title + (it.size && it.size !== 'Regular' ? ' (' + it.size + ')' : '') + ' x' + it.qty; }),
+        subtotal: total,
+        total: total,
+        payment: payment,
         method: method,
+        customer: user ? user.name : 'Guest',
+        email: user ? user.email : '',
         date: new Date().toLocaleString(),
         status: statuses[statusIdx]
     };
     orders.unshift(order);
     localStorage.setItem('yussif_orders', JSON.stringify(orders.slice(0, 20)));
+
+    /* Persist purchase + payment to Firestore */
+    if (window.YussifFirestore) {
+        window.YussifFirestore.saveOrder(order).catch(function() { /* offline/misconfig: ignore */ });
+    }
 
     var interval = setInterval(function() {
         var stored = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
@@ -1462,6 +1851,10 @@ function saveOrder(items, total, method) {
             statusIdx++;
             o.status = statuses[statusIdx];
             localStorage.setItem('yussif_orders', JSON.stringify(stored));
+            /* Keep Firestore in sync (only if signed in) */
+            if (window.YussifFirestore && authCurrentUid()) {
+                window.YussifFirestore.updateStatus(orderId, o.status).catch(function() {});
+            }
             renderOrders();
         } else {
             clearInterval(interval);
@@ -1471,17 +1864,42 @@ function saveOrder(items, total, method) {
 function renderOrders() {
     var orders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
     if (!ohList) return;
-    if (orders.length === 0) {
+
+    /* If signed in, load the user's orders from Firestore and merge */
+    if (window.YussifFirestore && getAuthUser()) {
+        window.YussifFirestore.loadOrders(function(fireOrders) {
+            if (fireOrders && fireOrders.length) {
+                var localIds = orders.map(function(o) { return o.id; });
+                fireOrders.forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) orders.unshift(o);
+                });
+                orders.sort(function(a, b) {
+                    return (b.createdAt ? (b.createdAt.seconds || 0) : 0) - (a.createdAt ? (a.createdAt.seconds || 0) : 0);
+                });
+            }
+            drawOrders(orders);
+        });
+    } else {
+        drawOrders(orders);
+    }
+}
+function drawOrders(orders) {
+    if (!ohList) return;
+    if (!orders || orders.length === 0) {
         ohList.innerHTML = '<div class="ohempty"><i class="fas fa-box-open"></i><p>No orders yet</p></div>';
         return;
     }
     ohList.innerHTML = '';
     orders.forEach(function(o) {
+        var lines = Array.isArray(o.itemLines) ? o.itemLines.join('<br/>')
+            : (Array.isArray(o.items) ? o.items.join('<br/>') : '');
+        var total = (typeof o.total === 'number') ? '$' + o.total.toFixed(2) : (o.total || '$0.00');
         var item = document.createElement('div');
         item.className = 'ohitem';
         item.innerHTML = '<div class="ohid">Order #' + o.id + ' <span class="ohstatus">' + o.status + '</span></div>' +
-            '<div class="ohitems">' + o.items.join('<br/>') + '</div>' +
-            '<div class="ohtotal">' + o.total + ' <span style="color:#888;font-weight:400;font-size:0.75rem;">via ' + o.method + '</span></div>';
+            (o.customer ? '<div class="ohcust"><i class="fas fa-user me-1"></i>' + o.customer + '</div>' : '') +
+            '<div class="ohitems">' + lines + '</div>' +
+            '<div class="ohtotal">' + total + ' <span style="color:#888;font-weight:400;font-size:0.75rem;">via ' + o.method + '</span></div>';
         ohList.appendChild(item);
     });
 }
@@ -1507,10 +1925,25 @@ document.getElementById('tmTrackBtn') && document.getElementById('tmTrackBtn').a
 });
 
 /* ============================================================
-   ADDRESS BOOK
+   ADDRESS BOOK  (persisted in Firestore when signed in;
+   falls back to localStorage otherwise)
    ============================================================ */
 var addrBook = JSON.parse(localStorage.getItem('yussif_addr') || '[]');
 var selAddr = null;
+
+/* Load addresses from Firestore if signed in */
+function loadAddrFromFirestore() {
+    if (window.YussifFirestore && getAuthUser()) {
+        window.YussifFirestore.loadAddresses(function(list) {
+            if (list && list.length) {
+                addrBook = list;
+                localStorage.setItem('yussif_addr', JSON.stringify(addrBook));
+                renderAddr();
+            }
+        });
+    }
+}
+
 function renderAddr() {
     var list = document.getElementById('ckAddList');
     if (!list) return;
@@ -1534,8 +1967,11 @@ function renderAddr() {
     if (delBtn) {
         delBtn.addEventListener('click', function(e) {
             var i = parseInt(this.getAttribute('data-i'));
-            addrBook.splice(i, 1);
+            var removed = addrBook.splice(i, 1)[0];
             localStorage.setItem('yussif_addr', JSON.stringify(addrBook));
+            if (window.YussifFirestore && getAuthUser() && removed && removed.id) {
+                window.YussifFirestore.deleteAddress(removed.id).catch(function() {});
+            }
             if (selAddr === i) selAddr = null;
             renderAddr();
             showToast('Address removed', 'warn');
@@ -1562,8 +1998,12 @@ if (addSave && addForm) {
         var city = document.getElementById('addCity').value.trim();
         var zip = document.getElementById('addZip').value.trim();
         if (!addr || !city || !zip) { showToast('Please fill all address fields', 'warn'); return; }
-        addrBook.push({ addr: addr, city: city, zip: zip });
+        var entry = { id: 'a' + Date.now() + Math.floor(Math.random() * 999), addr: addr, city: city, zip: zip };
+        addrBook.push(entry);
         localStorage.setItem('yussif_addr', JSON.stringify(addrBook));
+        if (window.YussifFirestore && getAuthUser()) {
+            window.YussifFirestore.setAddress(entry.id, entry).catch(function() {});
+        }
         document.getElementById('addAddr').value = '';
         document.getElementById('addCity').value = '';
         document.getElementById('addZip').value = '';
@@ -1573,6 +2013,7 @@ if (addSave && addForm) {
     });
 }
 renderAddr();
+loadAddrFromFirestore();
 
 /* ============================================================
    ORDER HISTORY BUTTON VISIBILITY
@@ -1886,6 +2327,7 @@ function renderCompareTable() {
 }
 
 document.getElementById('compareBtn').addEventListener('click', function() {
+    if (!requireAuth('login')) return;
     compareList.forEach(function(item) {
         var card = document.querySelector('.mcard[data-title="' + item.title + '"]');
         if (card) {
@@ -1998,6 +2440,7 @@ function showCartSuggestions() {
     }
     document.querySelectorAll('.csitemsugadd').forEach(function(btn) {
         btn.addEventListener('click', function() {
+            if (!requireAuth('login')) return;
             var title = this.getAttribute('data-title');
             var price = parseFloat(this.getAttribute('data-price'));
             var img = this.getAttribute('data-img');
