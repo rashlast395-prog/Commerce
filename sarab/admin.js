@@ -60,6 +60,7 @@ function initAdmin() {
     loadReservations();
     loadMenu();
     loadCustomers();
+    loadRiders();
 }
 
 /* ============================================================

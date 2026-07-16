@@ -5823,4 +5823,13 @@ footer {
     font-size: .85rem;
 }
 
+/* ===================== PWA INSTALL BUTTON ===================== */
+.pwa-install-btn {
+    animation: slideInRight .3s;
+}
+@keyframes slideInRight {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
 

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Richy's Eat - Rider Dashboard</title>
+    <link rel="manifest" href="../sarab/manifest.json"/>
+    <meta name="theme-color" content="#e8281a"/>
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="apple-mobile-web-app-title" content="Richy's Eat Rider"/>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
     <link href="../sarab/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="../sarab/css/all.min.css" rel="stylesheet"/>
@@ -249,5 +254,12 @@
     <div class="rider-modal-cvr" id="orderModalCvr"></div>
 
     <script type="module" src="rider.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('../sarab/sw.js');
+            });
+        }
+    </script>
 </body>
 </html>

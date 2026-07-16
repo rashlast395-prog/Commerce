@@ -2795,3 +2795,47 @@ updateMobileNavCart();
 updateOrdersBtn();
 showCartSuggestions();
 
+/* ============================================================
+   PWA - SERVICE WORKER REGISTRATION
+   ============================================================ */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+            .then(function(registration) {
+                console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+                console.log('SW registration failed: ', registrationError);
+            });
+    });
+}
+
+/* PWA Install Prompt */
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    var installBtn = document.createElement('button');
+    installBtn.className = 'pwa-install-btn';
+    installBtn.innerHTML = '<i class="fas fa-download me-1"></i>Install App';
+    installBtn.style.cssText = 'position:fixed;bottom:90px;right:20px;z-index:9999;padding:12px 20px;background:linear-gradient(135deg,#e8281a,#c01e12);color:#fff;border:none;border-radius:50px;font-weight:600;box-shadow:0 4px 15px rgba(232,40,26,0.3);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;animation:slideIn .3s;';
+    document.body.appendChild(installBtn);
+
+    installBtn.addEventListener('click', function() {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(choiceResult) {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+            }
+            deferredPrompt = null;
+            installBtn.remove();
+        });
+    });
+});
+
+window.addEventListener('appinstalled', function() {
+    console.log('PWA was installed');
+    var btn = document.querySelector('.pwa-install-btn');
+    if (btn) btn.remove();
+});
+
