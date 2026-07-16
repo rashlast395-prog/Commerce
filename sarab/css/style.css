@@ -5436,6 +5436,26 @@ footer {
    margin-bottom: 10px;
    word-break: break-all;
 }
+.ud-divider {
+   height: 1px;
+   background: #f0f0f0;
+   margin: 8px 0;
+}
+.ud-link {
+   display: flex;
+   align-items: center;
+   padding: 8px 10px;
+   border-radius: 8px;
+   color: #555;
+   text-decoration: none;
+   font-size: 0.82rem;
+   font-weight: 500;
+   transition: all .2s;
+}
+.ud-link:hover {
+   background: #f8f9fa;
+   color: var(--primary);
+}
 
 #authModal {
    position: fixed;
@@ -5693,5 +5713,114 @@ footer {
 }
 .authback:hover { color: var(--primary); }
 
+/* CUSTOMER DASHBOARD */
+#customerDashboardModal {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20,12,8,0.55);
+    backdrop-filter: blur(4px);
+}
+#customerDashboardModal.open {
+    display: flex;
+}
+.cdbox {
+    background: #fff;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.cdhead {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.cdhead h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.cdbody { padding: 24px; }
+.cdstats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.cdstat {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+.cdsteticon {
+    width: 42px; height: 42px;
+    background: var(--primary);
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+.cdstatinfo h4 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.cdstatinfo p {
+    margin: 2px 0 0;
+    font-size: .72rem;
+    color: #888;
+}
+.cdsection { margin-bottom: 20px; }
+.cdsection h5 {
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #555;
+}
+.cdorders, .cdwishlist { display: flex; flex-direction: column; gap: 8px; }
+.cdorder-item, .cdwish-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-size: .85rem;
+}
+.cdorder-item .cdorder-status {
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    color: #fff;
+}
+.cdwish-item img {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-right: 10px;
+}
+.cdwish-item-info { flex: 1; }
+.cdwish-item-info strong { display: block; font-size: .85rem; }
+.cdwish-item-info small { color: #888; }
+.cdempty {
+    text-align: center;
+    padding: 24px;
+    color: #bbb;
+    font-size: .85rem;
+}
 
 

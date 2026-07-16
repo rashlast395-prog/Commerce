@@ -87,10 +87,15 @@
                           <i class="fas fa-user-circle me-1"></i><span id="userName">User</span>
                        </button>
                        <button class="nav-cta auth-btn logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt me-1"></i>Logout</button>
-                       <div class="user-drop" id="userDrop">
-                          <div class="ud-name" id="udName">User</div>
-                          <div class="ud-email" id="udEmail">email</div>
-                       </div>
+                        <div class="user-drop" id="userDrop">
+                           <div class="ud-name" id="udName">User</div>
+                           <div class="ud-email" id="udEmail">email</div>
+                           <div class="ud-divider"></div>
+                           <a href="#" class="ud-link" id="dashboardLink"><i class="fas fa-chart-pie me-2"></i>My Dashboard</a>
+                           <a href="#" class="ud-link" id="ordersLink"><i class="fas fa-receipt me-2"></i>My Orders</a>
+                           <a href="#" class="ud-link" id="wishlistLink"><i class="fas fa-heart me-2"></i>Wishlist</a>
+                           <a href="rider.html" class="ud-link" id="riderLink" style="display:none;"><i class="fas fa-motorcycle me-2"></i>Rider Dashboard</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1477,7 +1482,7 @@
             <div class="container">
                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                   <p>&copy 2026 <span>Richy's Eat</span>. All Rights Reserved by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a>. Made with <span><i class="fas fa-heart"></i></span>  <br>Distributed by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a></p>
-                  <div><a href="#">Privacy Policy</a><a href="#">Terms</a><a href="#">Cookies</a></div>
+                   <div><a href="#">Privacy Policy</a><a href="#">Terms</a><a href="#">Cookies</a><a href="admin.html" style="margin-left:12px;opacity:.5;"><i class="fas fa-lock me-1"></i>Admin</a><a href="rider.html" style="margin-left:12px;opacity:.5;"><i class="fas fa-motorcycle me-1"></i>Rider</a></div>
                </div>
             </div>
          </div>
@@ -1793,15 +1798,48 @@
           </div>
        </div>
 
-       <!-- Order History Modal -->
-       <div id="orderHistoryModal">
-          <div class="ohbox">
-             <button class="ohclose" id="ohClose"><i class="fas fa-times"></i></button>
-             <div class="ohhead"><i class="fas fa-receipt me-2"></i>Order History</div>
-             <div class="ohlist" id="ohList"></div>
-          </div>
-       </div>
-        <div class="paycvr" id="ohCvr"></div>
+        <!-- Order History Modal -->
+        <div id="orderHistoryModal">
+           <div class="ohbox">
+              <button class="ohclose" id="ohClose"><i class="fas fa-times"></i></button>
+              <div class="ohhead"><i class="fas fa-receipt me-2"></i>Order History</div>
+              <div class="ohlist" id="ohList"></div>
+           </div>
+        </div>
+         <div class="paycvr" id="ohCvr"></div>
+
+        <!-- Customer Dashboard Modal -->
+        <div id="customerDashboardModal">
+           <div class="cdbox">
+              <button class="ohclose" id="cdClose"><i class="fas fa-times"></i></button>
+              <div class="cdhead"><i class="fas fa-chart-pie me-2"></i>My Dashboard</div>
+              <div class="cdbody">
+                 <div class="cdstats">
+                    <div class="cdstat">
+                       <div class="cdsteticon"><i class="fas fa-receipt"></i></div>
+                       <div class="cdstatinfo"><h4 id="cdTotalOrders">0</h4><p>Total Orders</p></div>
+                    </div>
+                    <div class="cdstat">
+                       <div class="cdsteticon"><i class="fas fa-dollar-sign"></i></div>
+                       <div class="cdstatinfo"><h4 id="cdTotalSpent">$0</h4><p>Total Spent</p></div>
+                    </div>
+                    <div class="cdstat">
+                       <div class="cdsteticon"><i class="fas fa-heart"></i></div>
+                       <div class="cdstatinfo"><h4 id="cdWishlistCount">0</h4><p>Wishlist Items</p></div>
+                    </div>
+                 </div>
+                 <div class="cdsection">
+                    <h5><i class="fas fa-clock me-2"></i>Recent Orders</h5>
+                    <div class="cdorders" id="cdOrders"></div>
+                 </div>
+                 <div class="cdsection">
+                    <h5><i class="fas fa-heart me-2"></i>Wishlist</h5>
+                    <div class="cdwishlist" id="cdWishlist"></div>
+                 </div>
+              </div>
+           </div>
+        </div>
+         <div class="paycvr" id="cdCvr"></div>
 
         <!-- ============================================================
            AUTH MODAL (LOGIN / SIGN UP)

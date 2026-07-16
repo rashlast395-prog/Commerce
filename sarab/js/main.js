@@ -284,10 +284,11 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 
     if (window.YussifAuth) {
         window.YussifAuth.login(email, pass)
-            .then(function() {
+            .then(function(user) {
                 authMsg('login', 'ok', 'Login successful!');
                 showToast('Welcome back!', 'success');
                 setTimeout(closeAuth, 600);
+                routeAfterLogin(user);
             })
             .catch(function(err) {
                 authMsg('login', 'err', firebaseErr(err));
@@ -318,10 +319,11 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
 
     if (window.YussifAuth) {
         window.YussifAuth.signUp(name, email, pass)
-            .then(function() {
+            .then(function(user) {
                 authMsg('signup', 'ok', 'Account created!');
                 showToast('Account created. Welcome, ' + name + '!', 'success');
                 setTimeout(closeAuth, 600);
+                routeAfterLogin(user);
             })
             .catch(function(err) {
                 authMsg('signup', 'err', firebaseErr(err));
@@ -357,6 +359,24 @@ function firebaseErr(err) {
         case 'auth/missing-email': return 'Please enter your email address.';
         case 'auth/user-disabled': return 'This account has been disabled. Contact support.';
         default: return (err && err.message) ? err.message : 'Something went wrong. Please try again.';
+    }
+}
+
+/* ---------- ROUTING ---------- */
+function routeAfterLogin(user) {
+    if (!user || !window.YussifAuth) return;
+    var role = window.YussifAuth.routeUser(user);
+    if (role === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+    }
+    /* Check if rider */
+    if (window.YussifFirestore) {
+        window.YussifFirestore.isRider().then(function(isRider) {
+            if (isRider) {
+                window.location.href = 'rider.html';
+            }
+        }).catch(function() {});
     }
 }
 
@@ -480,10 +500,24 @@ function renderAuthUI() {
         document.getElementById('userName').textContent = user.name.split(' ')[0];
         document.getElementById('udName').textContent = user.name;
         document.getElementById('udEmail').textContent = user.email;
+        checkRiderStatus(user);
     } else {
         authArea.style.display = 'flex';
         userArea.style.display = 'none';
+        var riderLink = document.getElementById('riderLink');
+        if (riderLink) riderLink.style.display = 'none';
     }
+}
+
+function checkRiderStatus(user) {
+    var riderLink = document.getElementById('riderLink');
+    if (!riderLink || !window.YussifFirestore) return;
+
+    window.YussifFirestore.isRider().then(function(isRider) {
+        riderLink.style.display = isRider ? 'flex' : 'none';
+    }).catch(function() {
+        riderLink.style.display = 'none';
+    });
 }
 renderAuthUI();
 
@@ -1917,6 +1951,167 @@ if (ohCvr) {
         document.body.style.overflow = '';
     });
 }
+document.getElementById('tmTrackBtn') && document.getElementById('tmTrackBtn').addEventListener('click', function() {
+    renderOrders();
+    ohModal.classList.add('open');
+    ohCvr.classList.add('show');
+    document.body.style.overflow = 'hidden';
+});
+
+/* ============================================================
+   CUSTOMER DASHBOARD
+   ============================================================ */
+var cdModal = document.getElementById('customerDashboardModal');
+var cdClose = document.getElementById('cdClose');
+var cdCvr = document.getElementById('cdCvr');
+
+function openCustomerDashboard() {
+    if (!isLoggedIn()) {
+        openAuth('login');
+        showToast('Please login to view your dashboard', 'warn');
+        return;
+    }
+    renderCustomerDashboard();
+    cdModal.classList.add('open');
+    cdCvr.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeCustomerDashboard() {
+    cdModal.classList.remove('open');
+    cdCvr.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function renderCustomerDashboard() {
+    var user = getAuthUser();
+    var wishlist = JSON.parse(localStorage.getItem('yussif_wishlist') || '[]');
+
+    document.getElementById('cdWishlistCount').textContent = wishlist.length;
+
+    var ordersDiv = document.getElementById('cdOrders');
+    ordersDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+
+    var renderFromLocal = function(orders) {
+        document.getElementById('cdTotalOrders').textContent = orders.length;
+        var totalSpent = orders.reduce(function(sum, o) { return sum + (parseFloat(o.total) || 0); }, 0);
+        document.getElementById('cdTotalSpent').textContent = '$' + totalSpent.toFixed(2);
+
+        ordersDiv.innerHTML = '';
+        if (orders.length === 0) {
+            ordersDiv.innerHTML = '<div class="cdempty">No orders yet. Start ordering!</div>';
+        } else {
+            orders.slice(0, 5).forEach(function(o) {
+                var statusColor = '#3498db';
+                if (o.status === 'Preparing') statusColor = '#f39c12';
+                else if (o.status === 'Out for Delivery') statusColor = '#e74c3c';
+                else if (o.status === 'Delivered') statusColor = '#27ae60';
+                else if (o.deliveryStatus === 'picked_up') statusColor = '#f39c12';
+                else if (o.deliveryStatus === 'delivered') statusColor = '#27ae60';
+
+                var displayStatus = o.deliveryStatus || o.status || 'Pending';
+                var div = document.createElement('div');
+                div.className = 'cdorder-item';
+                div.innerHTML = '<div><strong>#' + (o.id || '') + '</strong><br/><small>' + (o.date || '') + '</small></div>' +
+                    '<div style="text-align:right;"><strong>$' + (parseFloat(o.total) || 0).toFixed(2) + '</strong><br/>' +
+                    '<span class="cdorder-status" style="background:' + statusColor + ';">' + displayStatus + '</span></div>';
+                ordersDiv.appendChild(div);
+            });
+        }
+    };
+
+    var localOrders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
+
+    if (window.YussifFirestore && user) {
+        window.YussifFirestore.loadOrders(function(fireOrders) {
+            if (fireOrders && fireOrders.length) {
+                var localIds = localOrders.map(function(o) { return o.id; });
+                fireOrders.forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) localOrders.unshift(o);
+                });
+                localOrders.sort(function(a, b) {
+                    return (b.createdAt ? (b.createdAt.seconds || 0) : 0) - (a.createdAt ? (a.createdAt.seconds || 0) : 0);
+                });
+            }
+            renderFromLocal(localOrders);
+        });
+    } else {
+        renderFromLocal(localOrders);
+    }
+
+    var wishDiv = document.getElementById('cdWishlist');
+    wishDiv.innerHTML = '';
+    if (wishlist.length === 0) {
+        wishDiv.innerHTML = '<div class="cdempty">No items in wishlist</div>';
+    } else {
+        wishlist.slice(0, 5).forEach(function(title) {
+            var card = document.querySelector('.mcard[data-title="' + title + '"]');
+            var img = card ? card.getAttribute('data-img') : 'img/menu/1.jpg';
+            var price = card ? card.getAttribute('data-price') : '0';
+            var div = document.createElement('div');
+            div.className = 'cdwish-item';
+            div.innerHTML = '<img src="' + img + '" alt=""/><div class="cdwish-item-info"><strong>' + title + '</strong><small>$' + price + '</small></div>' +
+                '<button class="admin-btn admin-btn-sm admin-btn-primary" onclick="requireAuth(\'login\') && addToCartByTitle(\'' + title + '\')">Add to Cart</button>';
+            wishDiv.appendChild(div);
+        });
+    }
+}
+
+function addToCartByTitle(title) {
+    var card = document.querySelector('.mcard[data-title="' + title + '"]');
+    if (!card) return;
+    var img = card.getAttribute('data-img') || 'img/menu/1.jpg';
+    var price = parseFloat(card.getAttribute('data-price')) || 0;
+    var existing = cartItems.find(function(it) { return it.title === title; });
+    if (existing) { existing.qty++; }
+    else { cartItems.push({ img: img, title: title, price: price, qty: 1, size: 'Regular', spice: 'Mild', extras: [] }); }
+    updateCartUI();
+    cartBtn.classList.remove('bounce');
+    void cartBtn.offsetWidth;
+    cartBtn.classList.add('bounce');
+    showToast('Item added to cart!', 'success');
+}
+
+if (cdClose) {
+    cdClose.addEventListener('click', closeCustomerDashboard);
+}
+if (cdCvr) {
+    cdCvr.addEventListener('click', closeCustomerDashboard);
+}
+
+var dashboardLink = document.getElementById('dashboardLink');
+if (dashboardLink) {
+    dashboardLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('userDrop').style.display = 'none';
+        openCustomerDashboard();
+    });
+}
+
+var ordersLink = document.getElementById('ordersLink');
+if (ordersLink) {
+    ordersLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('userDrop').style.display = 'none';
+        renderOrders();
+        ohModal.classList.add('open');
+        ohCvr.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    });
+}
+
+var wishlistLink = document.getElementById('wishlistLink');
+if (wishlistLink) {
+    wishlistLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('userDrop').style.display = 'none';
+        openCustomerDashboard();
+        setTimeout(function() {
+            document.getElementById('cdWishlist').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+    });
+}
+
+/* Auto-refresh order history when modal opens */
 document.getElementById('tmTrackBtn') && document.getElementById('tmTrackBtn').addEventListener('click', function() {
     renderOrders();
     ohModal.classList.add('open');

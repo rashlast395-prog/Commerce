@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Richy's Eat - Rider Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="../sarab/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../sarab/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="rider.css"/>
+</head>
+<body>
+    <div class="rider-wrapper">
+        <!-- Sidebar -->
+        <aside class="rider-sidebar" id="riderSidebar">
+            <div class="rider-brand">
+                <div class="bico"><i class="fas fa-motorcycle"></i></div>
+                <div class="bname">Richy's<span>Eat</span></div>
+                <small>Rider Panel</small>
+            </div>
+            <nav class="rider-nav">
+                <a href="#" class="rider-nav-item active" data-section="dashboard">
+                    <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+                </a>
+                <a href="#" class="rider-nav-item" data-section="available">
+                    <i class="fas fa-box-open"></i><span>Available Orders</span>
+                    <span class="rider-badge" id="availableBadge" style="display:none;">0</span>
+                </a>
+                <a href="#" class="rider-nav-item" data-section="myorders">
+                    <i class="fas fa-route"></i><span>My Deliveries</span>
+                </a>
+                <a href="#" class="rider-nav-item" data-section="profile">
+                    <i class="fas fa-user"></i><span>My Profile</span>
+                </a>
+            </nav>
+            <div class="rider-sidebar-footer">
+                <a href="../sarab/index.html" class="rider-nav-item">
+                    <i class="fas fa-store"></i><span>Back to Site</span>
+                </a>
+                <button class="rider-nav-item" id="riderLogout">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="rider-main">
+            <!-- Top Bar -->
+            <header class="rider-topbar">
+                <button class="rider-toggle" id="riderToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="rider-topbar-right">
+                    <div class="rider-status-toggle">
+                        <span class="rider-status-label">Status:</span>
+                        <button class="rider-status-btn" id="riderStatusBtn">
+                            <span class="rider-status-dot" id="riderStatusDot"></span>
+                            <span id="riderStatusText">Offline</span>
+                        </button>
+                    </div>
+                    <div class="rider-user">
+                        <div class="rider-avatar"><i class="fas fa-motorcycle"></i></div>
+                        <div>
+                            <strong id="riderName">Rider</strong>
+                            <small>Delivery Partner</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section class="rider-section active" id="section-dashboard">
+                <div class="rider-header">
+                    <h1>Dashboard</h1>
+                    <p>Welcome back! Here's your delivery overview.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-box-open"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statAvailable">0</h3>
+                            <p>Available Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-route"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statMyDeliveries">0</h3>
+                            <p>My Deliveries</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statCompleted">0</h3>
+                            <p>Completed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <h3 id="statEarnings">$0</h3>
+                            <p>Earnings</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rider-card">
+                    <div class="rider-card-header">
+                        <h3><i class="fas fa-clock me-2"></i>Recent Activity</h3>
+                    </div>
+                    <div class="rider-card-body">
+                        <div class="table-responsive">
+                            <table class="rider-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentActivityTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Available Orders Section -->
+            <section class="rider-section" id="section-available">
+                <div class="rider-header">
+                    <h1>Available Orders</h1>
+                    <p>Orders waiting to be picked up</p>
+                </div>
+                <div class="rider-card">
+                    <div class="rider-card-body">
+                        <div class="table-responsive">
+                            <table class="rider-table rider-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Address</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Distance</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="availableOrdersTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Deliveries Section -->
+            <section class="rider-section" id="section-myorders">
+                <div class="rider-header">
+                    <h1>My Deliveries</h1>
+                    <p>Orders assigned to you</p>
+                </div>
+                <div class="rider-card">
+                    <div class="rider-card-header">
+                        <div class="rider-filters">
+                            <select class="rider-select" id="deliveryStatusFilter">
+                                <option value="all">All Status</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="picked_up">Picked Up</option>
+                                <option value="delivered">Delivered</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="rider-card-body">
+                        <div class="table-responsive">
+                            <table class="rider-table rider-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Address</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="myDeliveriesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Profile Section -->
+            <section class="rider-section" id="section-profile">
+                <div class="rider-header">
+                    <h1>My Profile</h1>
+                    <p>Your rider information</p>
+                </div>
+                <div class="rider-card">
+                    <div class="rider-card-body">
+                        <form id="riderProfileForm">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" class="form-control" id="riderProfileName" readonly/>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" id="riderProfileEmail" readonly/>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" class="form-control" id="riderProfilePhone" placeholder="+1 (800) 000-0000"/>
+                            </div>
+                            <div class="form-group">
+                                <label>Vehicle Type</label>
+                                <select class="form-control" id="riderVehicle">
+                                    <option>Motorcycle</option>
+                                    <option>Bicycle</option>
+                                    <option>Car</option>
+                                    <option>Scooter</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>License Plate / ID</label>
+                                <input type="text" class="form-control" id="riderLicense" placeholder="e.g. ABC-1234"/>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Update Profile</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div class="rider-modal" id="orderModal">
+        <div class="rider-modal-box">
+            <div class="rider-modal-header">
+                <h3>Order Details</h3>
+                <button class="rider-modal-close" id="orderModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="rider-modal-body" id="orderModalBody"></div>
+        </div>
+    </div>
+    <div class="rider-modal-cvr" id="orderModalCvr"></div>
+
+    <script type="module" src="rider.js"></script>
+</body>
+</html>

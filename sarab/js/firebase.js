@@ -57,6 +57,26 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+/* Seed menu items if collection is empty */
+function seedMenu() {
+    getDocs(collection(db, 'menu')).then(function(snap) {
+        if (snap.empty) {
+            var defaultItems = [
+                { name: 'Classic Smash Burger', category: 'Burgers', price: 14.99, image: 'img/menu/1.jpg', desc: 'Double smashed patty, cheddar, caramelized onions, pickles & special sauce', rating: '4.9', reviews: '128' },
+                { name: 'Margherita Royale', category: 'Pizza', price: 19.99, image: 'img/menu/2.jpg', desc: 'San Marzano tomatoes, buffalo mozzarella, basil & truffle oil on sourdough', rating: '4.8', reviews: '95' },
+                { name: 'Nashville Hot Chicken', category: 'Chicken', price: 12.99, image: 'img/menu/3.jpg', desc: 'Crispy fried chicken in fiery Nashville spice blend with honey drizzle', rating: '5.0', reviews: '210' },
+                { name: 'Loaded Fajita Wrap', category: 'Wraps', price: 10.99, image: 'img/menu/4.jpg', desc: 'Grilled chicken, peppers, sour cream & guacamole in a warm tortilla', rating: '4.5', reviews: '74' },
+                { name: 'Nutella Lava Cake', category: 'Desserts', price: 8.99, image: 'img/menu/5.jpg', desc: 'Molten chocolate cake with Nutella center, vanilla ice cream & caramel', rating: '4.9', reviews: '56' },
+                { name: 'Truffle Mushroom Pasta', category: 'Pasta', price: 16.99, image: 'img/menu/6.jpg', desc: 'Al dente tagliatelle, wild mushrooms, black truffle, parmesan & thyme', rating: '4.9', reviews: '88' }
+            ];
+            defaultItems.forEach(function(item) {
+                addDoc(collection(db, 'menu'), item).catch(function() {});
+            });
+        }
+    }).catch(function() {});
+}
+seedMenu();
+
 /* True when a real Firebase user is signed in (used for Firestore writes) */
 window.YussifAuthCurrentUid = function () {
     return auth.currentUser ? auth.currentUser.uid : null;
@@ -78,13 +98,21 @@ window.YussifFirestore = {
             createdAt: serverTimestamp()
         });
         /* Use a stable doc id when provided (e.g. SB-1234) for easy lookup */
+        var savePromise;
         if (order.id) {
-            return setDoc(doc(base, order.id), payload).catch(function () {
-                /* If setDoc fails (e.g. bad chars), fall back to auto-id */
+            savePromise = setDoc(doc(base, order.id), payload).catch(function () {
                 return addDoc(base, payload);
             });
+        } else {
+            savePromise = addDoc(base, payload);
         }
-        return addDoc(base, payload);
+        /* Also mirror to top-level orders collection for admin dashboard */
+        return savePromise.then(function(docRef) {
+            var topPayload = Object.assign({}, payload);
+            delete topPayload.uid;
+            topPayload.id = docRef.id;
+            return addDoc(collection(db, "orders"), topPayload);
+        });
     },
 
     /* Load all orders for the signed-in user (or empty for guests) */
@@ -143,6 +171,19 @@ window.YussifFirestore = {
         var user = auth.currentUser;
         if (!user) return Promise.resolve();
         return setDoc(doc(db, "users", user.uid), profile, { merge: true });
+    },
+
+    /* Check if current user is a rider */
+    isRider: function () {
+        var user = auth.currentUser;
+        if (!user) return Promise.resolve(false);
+        return getDocs(collection(db, "riders")).then(function (snap) {
+            var found = false;
+            snap.forEach(function (d) {
+                if (d.data().uid === user.uid) found = true;
+            });
+            return found;
+        });
     },
 
     /* Save a reservation to Firestore */
@@ -241,5 +282,17 @@ window.YussifAuth = {
                 callback(null);
             }
         });
+    },
+
+    /* Route user based on role: admin, rider, or customer */
+    routeUser: function (user) {
+        if (!user) return 'customer';
+        if (user.email === 'rashlast395@gmail.com') return 'admin';
+        if (user.displayName === 'rashlast395-prog') return 'admin';
+        /* Check if user is a rider */
+        if (window.YussifFirestore) {
+            return 'customer';
+        }
+        return 'customer';
     }
 };
