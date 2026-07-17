@@ -11,6 +11,7 @@ import {
     addDoc,
     deleteDoc,
     getDocs,
+    getDoc,
     query,
     orderBy,
     serverTimestamp,
@@ -116,6 +117,7 @@ function setupModals() {
     document.getElementById('riderModalCvr').addEventListener('click', closeRiderModal);
     document.getElementById('addRiderBtn').addEventListener('click', function() { openRiderModal(null); });
     document.getElementById('riderForm').addEventListener('submit', saveRider);
+    document.getElementById('orderStatusFilter').addEventListener('change', applyOrderFilter);
 }
 
 function closeOrderModal() {
@@ -252,6 +254,43 @@ function loadRecentReservations() {
 }
 
 /* ============================================================
+   ORDER FILTER & BADGE
+   ============================================================ */
+function applyOrderFilter() {
+    var filterVal = document.getElementById('orderStatusFilter').value;
+    var rows = document.querySelectorAll('#allOrdersTable tbody tr');
+    rows.forEach(function(row) {
+        var statusCell = row.querySelector('td:nth-child(6)');
+        if (!statusCell) return;
+        var select = statusCell.querySelector('.admin-status-select');
+        if (!select) return;
+        var rowStatus = select.value;
+        if (filterVal === 'all' || rowStatus === filterVal) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function updateOrdersBadge() {
+    var rows = document.querySelectorAll('#allOrdersTable tbody tr');
+    var count = 0;
+    rows.forEach(function(row) {
+        if (row.style.display === 'none') return;
+        var select = row.querySelector('.admin-status-select');
+        if (select && (select.value === 'Order Received' || select.value === 'Preparing')) {
+            count++;
+        }
+    });
+    var badge = document.getElementById('ordersBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+}
+
+/* ============================================================
    ORDERS
    ============================================================ */
 function loadOrders() {
@@ -323,6 +362,8 @@ function renderOrders(docs) {
             viewOrder(orderId);
         });
     });
+    updateOrdersBadge();
+    applyOrderFilter();
 }
 
 function updateDeliveryStatus(orderId, status) {
@@ -344,54 +385,56 @@ function updateOrderStatus(orderId, status) {
 }
 
 function viewOrder(orderId) {
-    getDocs(collection(db, 'orders')).then(function(snap) {
-        var order = null;
-        snap.docs.forEach(function(d) {
-            if (d.id === orderId || (d.data().id === orderId)) {
-                order = d.data();
-                order.id = d.id;
-            }
-        });
-        if (!order) return;
-
-        var itemsHtml = '';
-        if (order.items && Array.isArray(order.items)) {
-            order.items.forEach(function(it) {
-                itemsHtml += '<div class="order-item">' +
-                    '<strong>' + (it.title || it) + '</strong>' +
-                    '<span>x' + (it.qty || 1) + '</span>' +
-                    '<span>$' + ((it.price || 0) * (it.qty || 1)).toFixed(2) + '</span>' +
-                    '</div>';
-            }
-        } else if (order.itemLines) {
-            itemsHtml = order.itemLines.map(function(line) { return '<div class="order-item">' + line + '</div>'; }).join('');
+    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+        if (!snap.exists) {
+            getDocs(collection(db, 'orders')).then(function(snapAll) {
+                snapAll.docs.forEach(function(d) {
+                    if (d.data().id === orderId) {
+                        renderOrderDetail(d.data(), d.id);
+                    }
+                });
+            });
+            return;
         }
-
-        document.getElementById('orderModalBody').innerHTML =
-            '<div class="order-detail-grid">' +
-            '<div class="order-detail-item"><strong>Order ID:</strong> #' + order.id + '</div>' +
-            '<div class="order-detail-item"><strong>Customer:</strong> ' + (order.customer || 'Guest') + '</div>' +
-            '<div class="order-detail-item"><strong>Email:</strong> ' + (order.email || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Phone:</strong> ' + (order.phone || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Total:</strong> $' + (parseFloat(order.total) || 0).toFixed(2) + '</div>' +
-            '<div class="order-detail-item"><strong>Status:</strong> ' + getStatusBadge(order.status) + '</div>' +
-            '<div class="order-detail-item"><strong>Delivery Status:</strong> ' + getDeliveryBadge(order.deliveryStatus) + '</div>' +
-            '<div class="order-detail-item"><strong>Rider:</strong> ' + (order.riderName || 'Unassigned') + '</div>' +
-            '<div class="order-detail-item"><strong>Payment:</strong> ' + (order.method || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Date:</strong> ' + (order.date || '-') + '</div>' +
-            '</div>' +
-            '<h5 class="mt-4 mb-3">Items</h5>' +
-            '<div class="order-items-list">' + itemsHtml + '</div>';
-
-        document.getElementById('orderModal').classList.add('open');
-        document.getElementById('orderModalCvr').classList.add('show');
+        renderOrderDetail(snap.data(), snap.id);
     });
 }
 
-/* ============================================================
-   RESERVATIONS
-   ============================================================ */
-function loadReservations() {
+function renderOrderDetail(order, id) {
+    var itemsHtml = '';
+    if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(function(it) {
+            itemsHtml += '<div class="order-item">' +
+                '<strong>' + (it.title || it) + '</strong>' +
+                '<span>x' + (it.qty || 1) + '</span>' +
+                '<span>$' + ((it.price || 0) * (it.qty || 1)).toFixed(2) + '</span>' +
+                '</div>';
+        });
+    } else if (order.itemLines) {
+        itemsHtml = order.itemLines.map(function(line) { return '<div class="order-item">' + line + '</div>'; }).join('');
+    }
+
+    document.getElementById('orderModalBody').innerHTML =
+        '<div class="order-detail-grid">' +
+        '<div class="order-detail-item"><strong>Order ID:</strong> #' + (order.id || id) + '</div>' +
+        '<div class="order-detail-item"><strong>Customer:</strong> ' + (order.customer || 'Guest') + '</div>' +
+        '<div class="order-detail-item"><strong>Email:</strong> ' + (order.email || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Phone:</strong> ' + (order.phone || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Total:</strong> $' + (parseFloat(order.total) || 0).toFixed(2) + '</div>' +
+        '<div class="order-detail-item"><strong>Status:</strong> ' + getStatusBadge(order.status) + '</div>' +
+        '<div class="order-detail-item"><strong>Delivery Status:</strong> ' + getDeliveryBadge(order.deliveryStatus) + '</div>' +
+        '<div class="order-detail-item"><strong>Rider:</strong> ' + (order.riderName || 'Unassigned') + '</div>' +
+        '<div class="order-detail-item"><strong>Payment:</strong> ' + (order.method || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Date:</strong> ' + (order.date || '-') + '</div>' +
+        '</div>' +
+        '<h5 class="mt-4 mb-3">Items</h5>' +
+        '<div class="order-items-list">' + itemsHtml + '</div>';
+
+    document.getElementById('orderModal').classList.add('open');
+    document.getElementById('orderModalCvr').classList.add('show');
+}
+
+function updateDeliveryStatus(orderId, status) {() {
     if (reservationsUnsubscribe) reservationsUnsubscribe();
 
     var q = query(collection(db, 'reservations'), orderBy('createdAt', 'desc'));
@@ -457,7 +500,7 @@ function renderMenu(docs) {
         btn.addEventListener('click', function() {
             var itemId = this.getAttribute('data-id');
             var item = docs.find(function(d) { return d.id === itemId; });
-            if (item) openMenuModal(item.data());
+            if (item) openMenuModal(Object.assign({}, item.data(), { id: item.id }));
         });
     });
 
@@ -609,6 +652,6 @@ function showToast(message, type) {
     var toast = document.createElement('div');
     toast.className = 'admin-toast ' + type;
     toast.innerHTML = '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-times-circle') + '"></i>' + message;
-    document.body.appendChild(toast);
+    container.appendChild(toast);
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 3000);
 }

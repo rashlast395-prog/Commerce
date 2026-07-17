@@ -195,7 +195,13 @@ window.YussifFirestore = {
             uid: user ? user.uid : null,
             createdAt: serverTimestamp()
         });
-        return addDoc(base, payload);
+        var savePromise = addDoc(base, payload);
+        return savePromise.then(function(docRef) {
+            var topPayload = Object.assign({}, payload);
+            delete topPayload.uid;
+            topPayload.id = docRef.id;
+            return addDoc(collection(db, "reservations"), topPayload);
+        });
     }
 };
 
