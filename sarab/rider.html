@@ -34,6 +34,12 @@
                 <a href="#" class="rider-nav-item" data-section="myorders">
                     <i class="fas fa-route"></i><span>My Deliveries</span>
                 </a>
+                <a href="#" class="rider-nav-item" data-section="menu">
+                    <i class="fas fa-utensils"></i><span>Menu</span>
+                </a>
+                <a href="#" class="rider-nav-item" data-section="riders">
+                    <i class="fas fa-users"></i><span>Riders</span>
+                </a>
                 <a href="#" class="rider-nav-item" data-section="profile">
                     <i class="fas fa-user"></i><span>My Profile</span>
                 </a>
@@ -199,6 +205,60 @@
                 </div>
             </section>
 
+            <!-- Menu Section -->
+            <section class="rider-section" id="section-menu">
+                <div class="rider-header">
+                    <h1>Menu Items</h1>
+                    <p>All available food items</p>
+                </div>
+                <div class="rider-card">
+                    <div class="rider-card-body">
+                        <div class="table-responsive">
+                            <table class="rider-table rider-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Rating</th>
+                                        <th>Tags</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="menuTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Riders Section -->
+            <section class="rider-section" id="section-riders">
+                <div class="rider-header">
+                    <h1>All Riders</h1>
+                    <p>Delivery team members</p>
+                </div>
+                <div class="rider-card">
+                    <div class="rider-card-body">
+                        <div class="table-responsive">
+                            <table class="rider-table rider-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Vehicle</th>
+                                        <th>Status</th>
+                                        <th>Current Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ridersTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Profile Section -->
             <section class="rider-section" id="section-profile">
                 <div class="rider-header">
@@ -240,6 +300,8 @@
             </section>
         </main>
     </div>
+
+    <div id="toastContainer"></div>
 
     <!-- Order Detail Modal -->
     <div class="rider-modal" id="orderModal">

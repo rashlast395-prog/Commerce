@@ -37,6 +37,8 @@ var currentUser = null;
 var riderDoc = null;
 var availableUnsubscribe = null;
 var myOrdersUnsubscribe = null;
+var menuUnsubscribe = null;
+var ridersUnsubscribe = null;
 
 /* ============================================================
    AUTH CHECK
@@ -78,6 +80,8 @@ function initRider() {
     loadDashboard();
     loadAvailableOrders();
     loadMyDeliveries();
+    loadMenu();
+    loadRiders();
 }
 
 /* ============================================================
@@ -101,6 +105,8 @@ function setupNavigation() {
     document.getElementById('riderLogout').addEventListener('click', function() {
         if (availableUnsubscribe) availableUnsubscribe();
         if (myOrdersUnsubscribe) myOrdersUnsubscribe();
+        if (menuUnsubscribe) menuUnsubscribe();
+        if (ridersUnsubscribe) ridersUnsubscribe();
         auth.signOut();
         window.location.href = '../sarab/index.html';
     });
@@ -112,6 +118,8 @@ function showSection(sectionId) {
     if (sectionId === 'dashboard') loadDashboard();
     if (sectionId === 'available') loadAvailableOrders();
     if (sectionId === 'myorders') loadMyDeliveries();
+    if (sectionId === 'menu') loadMenu();
+    if (sectionId === 'riders') loadRiders();
     if (sectionId === 'profile') setupProfile();
 }
 
@@ -129,51 +137,56 @@ function closeOrderModal() {
 }
 
 function viewOrder(orderId) {
-    getDocs(collection(db, 'orders')).then(function(snap) {
-        var order = null;
-        snap.docs.forEach(function(d) {
-            if (d.id === orderId || (d.data().id === orderId)) {
-                order = d.data();
-                order.id = d.id;
-            }
-        });
-        if (!order) return;
-
-        var itemsHtml = '';
-        if (order.items && Array.isArray(order.items)) {
-            order.items.forEach(function(it) {
-                itemsHtml += '<div class="order-item">' +
-                    '<strong>' + (it.title || it) + '</strong>' +
-                    '<span>x' + (it.qty || 1) + '</span>' +
-                    '<span>$' + ((it.price || 0) * (it.qty || 1)).toFixed(2) + '</span>' +
-                    '</div>';
+    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+        if (!snap.exists) {
+            getDocs(collection(db, 'orders')).then(function(snapAll) {
+                snapAll.docs.forEach(function(d) {
+                    if (d.data().id === orderId) {
+                        renderOrderDetail(d.data(), d.id);
+                    }
+                });
             });
-        } else if (order.itemLines) {
-            itemsHtml = order.itemLines.map(function(line) { return '<div class="order-item">' + line + '</div>'; }).join('');
+            return;
         }
-
-        var statusColor = '#888';
-        if (order.deliveryStatus === 'assigned') statusColor = '#3498db';
-        else if (order.deliveryStatus === 'picked_up') statusColor = '#f39c12';
-        else if (order.deliveryStatus === 'delivered') statusColor = '#27ae60';
-
-        document.getElementById('orderModalBody').innerHTML =
-            '<div class="order-detail-grid">' +
-            '<div class="order-detail-item"><strong>Order ID:</strong> #' + order.id + '</div>' +
-            '<div class="order-detail-item"><strong>Customer:</strong> ' + (order.customer || 'Guest') + '</div>' +
-            '<div class="order-detail-item"><strong>Email:</strong> ' + (order.email || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Phone:</strong> ' + (order.phone || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Total:</strong> $' + (parseFloat(order.total) || 0).toFixed(2) + '</div>' +
-            '<div class="order-detail-item"><strong>Delivery Status:</strong> <span style="color:' + statusColor + ';font-weight:600;">' + (order.deliveryStatus || 'Pending') + '</span></div>' +
-            '<div class="order-detail-item"><strong>Payment:</strong> ' + (order.method || '-') + '</div>' +
-            '<div class="order-detail-item"><strong>Date:</strong> ' + (order.date || '-') + '</div>' +
-            '</div>' +
-            '<h5 class="mt-4 mb-3">Items</h5>' +
-            '<div class="order-items-list">' + itemsHtml + '</div>';
-
-        document.getElementById('orderModal').classList.add('open');
-        document.getElementById('orderModalCvr').classList.add('show');
+        renderOrderDetail(snap.data(), snap.id);
     });
+}
+
+function renderOrderDetail(order, id) {
+    var itemsHtml = '';
+    if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(function(it) {
+            itemsHtml += '<div class="order-item">' +
+                '<strong>' + (it.title || it) + '</strong>' +
+                '<span>x' + (it.qty || 1) + '</span>' +
+                '<span>$' + ((it.price || 0) * (it.qty || 1)).toFixed(2) + '</span>' +
+                '</div>';
+        });
+    } else if (order.itemLines) {
+        itemsHtml = order.itemLines.map(function(line) { return '<div class="order-item">' + line + '</div>'; }).join('');
+    }
+
+    var statusColor = '#888';
+    if (order.deliveryStatus === 'assigned') statusColor = '#3498db';
+    else if (order.deliveryStatus === 'picked_up') statusColor = '#f39c12';
+    else if (order.deliveryStatus === 'delivered') statusColor = '#27ae60';
+
+    document.getElementById('orderModalBody').innerHTML =
+        '<div class="order-detail-grid">' +
+        '<div class="order-detail-item"><strong>Order ID:</strong> #' + (order.id || id) + '</div>' +
+        '<div class="order-detail-item"><strong>Customer:</strong> ' + (order.customer || 'Guest') + '</div>' +
+        '<div class="order-detail-item"><strong>Email:</strong> ' + (order.email || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Phone:</strong> ' + (order.phone || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Total:</strong> $' + (parseFloat(order.total) || 0).toFixed(2) + '</div>' +
+        '<div class="order-detail-item"><strong>Delivery Status:</strong> <span style="color:' + statusColor + ';font-weight:600;">' + (order.deliveryStatus || 'Pending') + '</span></div>' +
+        '<div class="order-detail-item"><strong>Payment:</strong> ' + (order.method || '-') + '</div>' +
+        '<div class="order-detail-item"><strong>Date:</strong> ' + (order.date || '-') + '</div>' +
+        '</div>' +
+        '<h5 class="mt-4 mb-3">Items</h5>' +
+        '<div class="order-items-list">' + itemsHtml + '</div>';
+
+    document.getElementById('orderModal').classList.add('open');
+    document.getElementById('orderModalCvr').classList.add('show');
 }
 
 /* ============================================================
@@ -457,6 +470,70 @@ document.getElementById('deliveryStatusFilter').addEventListener('change', funct
 });
 
 /* ============================================================
+   MENU
+   ============================================================ */
+function loadMenu() {
+    if (menuUnsubscribe) menuUnsubscribe();
+
+    var q = query(collection(db, 'menu'), orderBy('name', 'asc'));
+    menuUnsubscribe = onSnapshot(q, function(snap) {
+        renderMenu(snap.docs);
+    }, function(err) {
+        console.error('Menu listener error:', err);
+    });
+}
+
+function renderMenu(docs) {
+    var tbody = document.getElementById('menuTable');
+    tbody.innerHTML = '';
+    docs.forEach(function(d) {
+        var m = d.data();
+        tbody.innerHTML += '<tr>' +
+            '<td><img src="' + (m.img || 'img/menu/1.jpg') + '" style="width:50px;height:50px;object-fit:cover;border-radius:8px;"/></td>' +
+            '<td><strong>' + (m.name || m.title || '') + '</strong></td>' +
+            '<td>' + (m.category || '-') + '</td>' +
+            '<td>$' + (parseFloat(m.price) || 0).toFixed(2) + '</td>' +
+            '<td>' + (m.rating || '0') + '/5</td>' +
+            '<td>' + (m.tags || '').split(',').filter(Boolean).map(function(t) { return '<span class="mptag">' + t.trim() + '</span>'; }).join(' ') + '</td>' +
+            '</tr>';
+    });
+}
+
+/* ============================================================
+   RIDERS
+   ============================================================ */
+function loadRiders() {
+    if (ridersUnsubscribe) ridersUnsubscribe();
+
+    var q = query(collection(db, 'riders'), orderBy('name', 'asc'));
+    ridersUnsubscribe = onSnapshot(q, function(snap) {
+        renderRiders(snap.docs);
+    }, function(err) {
+        console.error('Riders listener error:', err);
+    });
+}
+
+function renderRiders(docs) {
+    var tbody = document.getElementById('ridersTable');
+    tbody.innerHTML = '';
+    docs.forEach(function(d) {
+        var r = d.data();
+        var statusColor = r.available ? '#27ae60' : '#e74c3c';
+        var statusText = r.available ? 'Available' : 'Offline';
+        var currentOrder = r.currentOrderId ? '#' + r.currentOrderId : '-';
+
+        tbody.innerHTML += '<tr>' +
+            '<td><strong>' + (r.name || '') + '</strong></td>' +
+            '<td>' + (r.email || '') + '</td>' +
+            '<td>' + (r.phone || '-') + '</td>' +
+            '<td>' + (r.vehicle || '-') + ' ' + (r.license || '') + '</td>' +
+            '<td><span style="background:' + statusColor + ';color:#fff;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">' + statusText + '</span></td>' +
+            '<td>' + currentOrder + '</td>' +
+            '</tr>';
+    });
+}
+
+/* ============================================================
    UTILITIES
    ============================================================ */
 function getDeliveryBadge(status) {
@@ -477,7 +554,7 @@ function showToast(message, type) {
     var toast = document.createElement('div');
     toast.className = 'rider-toast ' + type;
     toast.innerHTML = '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-times-circle') + '"></i>' + message;
-    document.body.appendChild(toast);
+    container.appendChild(toast);
 
     setTimeout(function() { if (toast.parentNode) toast.remove(); }, 3000);
 }

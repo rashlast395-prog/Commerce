@@ -42,6 +42,9 @@
                 <a href="#" class="admin-nav-item" data-section="riders">
                     <i class="fas fa-motorcycle"></i><span>Riders</span>
                 </a>
+                <a href="#" class="admin-nav-item" data-section="messages">
+                    <i class="fas fa-envelope"></i><span>Messages</span>
+                </a>
             </nav>
             <div class="admin-sidebar-footer">
                 <a href="../sarab/index.html" class="admin-nav-item">
@@ -331,6 +334,33 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Messages Section -->
+            <section class="admin-section" id="section-messages">
+                <div class="admin-header">
+                    <h1>Contact Messages</h1>
+                    <p>Messages received from the contact form</p>
+                </div>
+                <div class="admin-card">
+                    <div class="admin-card-body">
+                        <div class="table-responsive">
+                            <table class="admin-table admin-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Subject</th>
+                                        <th>Message</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="messagesTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -433,6 +463,35 @@
         </div>
     </div>
     <div class="admin-modal-cvr" id="riderModalCvr"></div>
+
+    <!-- Message Reply Modal -->
+    <div class="admin-modal" id="messageModal">
+        <div class="admin-modal-box">
+            <div class="admin-modal-header">
+                <h3>Reply to Message</h3>
+                <button class="admin-modal-close" id="messageModalClose"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="admin-modal-body">
+                <form id="messageReplyForm">
+                    <input type="hidden" id="replyMessageId"/>
+                    <div class="form-group">
+                        <label>To</label>
+                        <input type="email" class="form-control" id="replyToEmail" readonly/>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" class="form-control" id="replySubject" required/>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea class="form-control" id="replyBody" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-paper-plane me-1"></i>Send Reply</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="admin-modal-cvr" id="messageModalCvr"></div>
 
     <script type="module" src="admin.js"></script>
     <script>

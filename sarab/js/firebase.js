@@ -202,6 +202,14 @@ window.YussifFirestore = {
             topPayload.id = docRef.id;
             return addDoc(collection(db, "reservations"), topPayload);
         });
+    },
+
+    /* Save a contact message to Firestore */
+    saveContactMessage: function (message) {
+        var payload = Object.assign({}, message, {
+            createdAt: serverTimestamp()
+        });
+        return addDoc(collection(db, "contactMessages"), payload);
     }
 };
 

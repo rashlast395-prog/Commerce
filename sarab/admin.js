@@ -40,6 +40,7 @@ var reservationsUnsubscribe = null;
 var menuUnsubscribe = null;
 var customersUnsubscribe = null;
 var ridersUnsubscribe = null;
+var messagesUnsubscribe = null;
 
 /* ============================================================
    AUTH CHECK
@@ -62,6 +63,7 @@ function initAdmin() {
     loadMenu();
     loadCustomers();
     loadRiders();
+    loadMessages();
 }
 
 /* ============================================================
@@ -101,6 +103,7 @@ function showSection(sectionId) {
     if (sectionId === 'menu') loadMenu();
     if (sectionId === 'customers') loadCustomers();
     if (sectionId === 'riders') loadRiders();
+    if (sectionId === 'messages') loadMessages();
 }
 
 /* ============================================================
@@ -111,13 +114,16 @@ function setupModals() {
     document.getElementById('orderModalCvr').addEventListener('click', closeOrderModal);
     document.getElementById('menuModalClose').addEventListener('click', closeMenuModal);
     document.getElementById('menuModalCvr').addEventListener('click', closeMenuModal);
-    document.getElementById('addMenuItemBtn').addEventListener('click', openMenuModal);
+    document.getElementById('addMenuItemBtn').addEventListener('click', function() { openMenuModal(null); });
     document.getElementById('menuItemForm').addEventListener('submit', saveMenuItem);
     document.getElementById('riderModalClose').addEventListener('click', closeRiderModal);
     document.getElementById('riderModalCvr').addEventListener('click', closeRiderModal);
     document.getElementById('addRiderBtn').addEventListener('click', function() { openRiderModal(null); });
     document.getElementById('riderForm').addEventListener('submit', saveRider);
     document.getElementById('orderStatusFilter').addEventListener('change', applyOrderFilter);
+    document.getElementById('messageModalClose').addEventListener('click', closeMessageModal);
+    document.getElementById('messageModalCvr').addEventListener('click', closeMessageModal);
+    document.getElementById('messageReplyForm').addEventListener('submit', saveReply);
 }
 
 function closeOrderModal() {
@@ -434,7 +440,10 @@ function renderOrderDetail(order, id) {
     document.getElementById('orderModalCvr').classList.add('show');
 }
 
-function updateDeliveryStatus(orderId, status) {() {
+/* ============================================================
+   RESERVATIONS
+   ============================================================ */
+function loadReservations() {
     if (reservationsUnsubscribe) reservationsUnsubscribe();
 
     var q = query(collection(db, 'reservations'), orderBy('createdAt', 'desc'));
@@ -444,6 +453,10 @@ function updateDeliveryStatus(orderId, status) {() {
         console.error('Reservations listener error:', err);
     });
 }
+
+/* ============================================================
+   ORDER STATUS
+   ============================================================ */
 
 function renderReservations(docs) {
     var tbody = document.getElementById('allReservationsTable');
@@ -622,6 +635,78 @@ function renderRiders(docs) {
                 });
             }
         });
+    });
+}
+
+/* ============================================================
+   MESSAGES
+   ============================================================ */
+function loadMessages() {
+    if (messagesUnsubscribe) messagesUnsubscribe();
+
+    var q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'));
+    messagesUnsubscribe = onSnapshot(q, function(snap) {
+        renderMessages(snap.docs);
+    }, function(err) {
+        console.error('Messages listener error:', err);
+    });
+}
+
+function renderMessages(docs) {
+    var tbody = document.getElementById('messagesTable');
+    tbody.innerHTML = '';
+    docs.forEach(function(d) {
+        var m = d.data();
+        tbody.innerHTML += '<tr>' +
+            '<td><strong>' + (m.name || '') + '</strong></td>' +
+            '<td>' + (m.email || '') + '</td>' +
+            '<td>' + (m.phone || '-') + '</td>' +
+            '<td>' + (m.subject || '-') + '</td>' +
+            '<td>' + (m.message || '').substring(0, 100) + ((m.message || '').length > 100 ? '...' : '') + '</td>' +
+            '<td>' + (m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : '-') + '</td>' +
+            '<td><button class="admin-btn admin-btn-sm admin-btn-primary reply-msg-btn" data-id="' + d.id + '" data-email="' + (m.email || '') + '" data-subject="' + (m.subject || '') + '"><i class="fas fa-reply me-1"></i>Reply</button></td>' +
+            '</tr>';
+    });
+
+    document.querySelectorAll('.reply-msg-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var msgId = this.getAttribute('data-id');
+            var email = this.getAttribute('data-email');
+            var subject = this.getAttribute('data-subject');
+            openMessageModal(msgId, email, subject);
+        });
+    });
+}
+
+function openMessageModal(msgId, email, subject) {
+    document.getElementById('replyMessageId').value = msgId;
+    document.getElementById('replyToEmail').value = email;
+    document.getElementById('replySubject').value = 'Re: ' + subject;
+    document.getElementById('replyBody').value = '';
+    document.getElementById('messageModal').classList.add('open');
+    document.getElementById('messageModalCvr').classList.add('show');
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').classList.remove('open');
+    document.getElementById('messageModalCvr').classList.remove('show');
+}
+
+function saveReply(e) {
+    e.preventDefault();
+    var msgId = document.getElementById('replyMessageId').value;
+    var reply = {
+        to: document.getElementById('replyToEmail').value,
+        subject: document.getElementById('replySubject').value,
+        body: document.getElementById('replyBody').value,
+        repliedAt: serverTimestamp()
+    };
+    var msgRef = doc(db, 'contactMessages', msgId);
+    setDoc(msgRef, { reply: reply }, { merge: true }).then(function() {
+        showToast('Reply sent successfully', 'success');
+        closeMessageModal();
+    }).catch(function(err) {
+        showToast('Failed to send reply: ' + err.message, 'err');
     });
 }
 
