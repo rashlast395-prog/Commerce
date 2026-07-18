@@ -378,15 +378,6 @@ function renderAvailableOrders(docs) {
 }
 
 /* Mirror an order change to the customer's subcollection (real-time sync). */
-function mirrorOrderToCustomer(orderId, changes) {
-    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
-        if (!snap.exists()) return;
-        var uid = snap.data().uid;
-        if (!uid) return;
-        updateDoc(doc(db, 'users', uid, 'orders', orderId), changes).catch(function() {});
-    }).catch(function() {});
-}
-
 function notifyUser(uid, orderId, title, body) {
     if (!uid) return;
     addDoc(collection(db, 'users', uid, 'notifications'), {
@@ -418,16 +409,6 @@ function acceptOrder(orderId) {
             deliveryStatus: 'assigned',
             assignedAt: serverTimestamp()
         }).then(function() {
-            /* Keep the customer's dashboard in sync in real time. */
-            mirrorOrderToCustomer(orderId, {
-                riderId: currentUser.uid,
-                riderName: riderDoc.name || currentUser.displayName || 'Rider',
-                riderPhone: riderDoc.phone || '',
-                riderVehicle: riderDoc.vehicle || '',
-                status: 'Rider Accepted',
-                deliveryStatus: 'assigned',
-                assignedAt: serverTimestamp()
-            });
             /* Push through the real-time sync server so every dashboard
                (customer + admin) updates instantly, no refresh. */
             if (window.RTSync) window.RTSync.setStatus(orderId, 'Rider Accepted');
@@ -437,6 +418,7 @@ function acceptOrder(orderId) {
             addDoc(collection(db, 'notifications'), {
                 type: 'order', title: 'Rider accepted #' + orderId, body: riderDoc.name + ' accepted the order.', orderId: orderId, createdAt: serverTimestamp(), read: false
             }).catch(function() {});
+            logActivity({ type: "order_accepted", orderId: orderId, actor: currentUser.uid, detail: riderDoc.name });
             showToast('Order accepted! Check My Deliveries.', 'success');
         });
     }).catch(function(err) {
@@ -452,13 +434,13 @@ function declineOrder(orderId) {
         status: 'Returned',
         deliveryStatus: 'pending'
     }).then(function() {
-        mirrorOrderToCustomer(orderId, { riderId: null, riderName: null, status: 'Returned', deliveryStatus: 'pending' });
         /* Real-time: immediately return the order to the admin queue and
            notify the admin that a reassignment is needed. */
         if (window.RTSync) window.RTSync.declineRider(orderId);
         addDoc(collection(db, 'notifications'), {
             type: 'order', title: 'Order returned #' + orderId, body: (riderDoc ? riderDoc.name : 'Rider') + ' declined the order. Reassign needed.', orderId: orderId, createdAt: serverTimestamp(), read: false
         }).catch(function() {});
+        logActivity({ type: "order_declined", orderId: orderId, actor: currentUser.uid, detail: riderDoc ? riderDoc.name : "rider" });
         showToast('Order returned to admin queue', 'warn');
         loadAvailableOrders();
     }).catch(function(err) {
@@ -559,7 +541,6 @@ function updateOrderStatus(orderId, status) {
     var changes = { deliveryStatus: status, status: nextStatus };
     if (status === 'delivered') changes.completedAt = serverTimestamp();
     updateDoc(doc(db, 'orders', orderId), changes).then(function() {
-        mirrorOrderToCustomer(orderId, changes);
         if (status === 'picked_up') {
             getDoc(doc(db, 'orders', orderId)).then(function(snap) {
                 if (snap.exists()) notifyUser(snap.data().uid, orderId, 'Out for delivery', 'Your order #' + orderId + ' is on the way!');

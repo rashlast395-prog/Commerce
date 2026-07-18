@@ -346,6 +346,7 @@ function showSection(sec){
     $("dbSidebar").classList.remove("show");
     if (sec==="dashboard") renderDashboard();
     if (sec==="notifications") { loadNotifications(); renderNotifications(); }
+    if (sec==="chat") loadChat();
 }
 
 /* ============================================================
@@ -617,12 +618,14 @@ function saveMenuItem(){
             dbToast("Item updated", "success");
             closeModal("menuModal");
             loadMenu();
+            logActivity({ type: "menu_updated", detail: data.name || id });
         });
     } else {
         addDoc(collection(db, "menu"), data).then(function(){
             dbToast("Item added", "success");
             closeModal("menuModal");
             loadMenu();
+            logActivity({ type: "menu_created", detail: data.name || "new item" });
         });
     }
 }
@@ -655,9 +658,11 @@ function editUser(id){
     openModal("userModal");
 }
 function deleteUser(id){
+    if (!confirm("Delete this user?")) return;
     deleteDoc(doc(db, "users", id)).then(function(){
         dbToast("User deleted", "success");
         loadUsers();
+        logActivity({ type: "user_deleted", detail: id });
     }).catch(function(){ dbToast("Delete failed", "err"); });
 }
 function saveUser(){
@@ -674,12 +679,14 @@ function saveUser(){
             dbToast("User updated", "success");
             closeModal("userModal");
             loadUsers();
+            logActivity({ type: "user_updated", detail: data.name || id });
         });
     } else {
         addDoc(collection(db, "users"), data).then(function(){
             dbToast("User added", "success");
             closeModal("userModal");
             loadUsers();
+            logActivity({ type: "user_created", detail: data.name || "new user" });
         });
     }
 }
@@ -719,9 +726,11 @@ function editRider(id){
     openModal("riderModal");
 }
 function deleteRider(id){
+    if (!confirm("Delete this rider?")) return;
     deleteDoc(doc(db, "riders", id)).then(function(){
         dbToast("Rider removed", "success");
         loadRiders();
+        logActivity({ type: "rider_deleted", detail: id });
     }).catch(function(){ dbToast("Delete failed", "err"); });
 }
 function saveRider(){
@@ -740,12 +749,14 @@ function saveRider(){
             dbToast("Rider updated", "success");
             closeModal("riderModal");
             loadRiders();
+            logActivity({ type: "rider_updated", detail: data.name || id });
         });
     } else {
         addDoc(collection(db, "riders"), data).then(function(){
             dbToast("Rider added", "success");
             closeModal("riderModal");
             loadRiders();
+            logActivity({ type: "rider_created", detail: data.name || "new rider" });
         });
     }
 }

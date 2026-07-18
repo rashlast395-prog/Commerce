@@ -375,37 +375,22 @@ function renderOrders(docs) {
     applyOrderFilter();
 }
 
-/* Mirror an order change into the customer's subcollection so the
-   customer dashboard updates in real time. No-op if uid unknown. */
-function mirrorOrder(orderId, changes) {
-    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
-        if (!snap.exists()) return;
-        var uid = snap.data().uid;
-        if (!uid) return;
-        updateDoc(doc(db, 'users', uid, 'orders', orderId), changes).catch(function() {});
-    }).catch(function() {});
-}
-
-/* Push a notification to a customer (their own subcollection) and the
-   global notifications collection for the Command Center. */
-function notifyCustomer(orderId, uid, title, body) {
-    if (uid) addDoc(collection(db, 'users', uid, 'notifications'), {
-        type: 'order', title: title, body: body, orderId: orderId, createdAt: serverTimestamp(), read: false
-    }).catch(function() {});
-    addDoc(collection(db, 'notifications'), {
-        type: 'order', title: title, body: body, orderId: orderId, createdAt: serverTimestamp(), read: false
-    }).catch(function() {});
-}
-
 function updateDeliveryStatus(orderId, status) {
     updateDoc(doc(db, 'orders', orderId), { deliveryStatus: status }).then(function() {
-        mirrorOrder(orderId, { deliveryStatus: status });
         if (status === 'delivered') {
             getDoc(doc(db, 'orders', orderId)).then(function(snap) {
-                if (snap.exists()) notifyCustomer(orderId, snap.data().uid, 'Order Delivered', 'Your order #' + orderId + ' has been delivered. Enjoy!');
+                if (snap.exists()) {
+                    var uid = snap.data().uid;
+                    if (uid) {
+                        addDoc(collection(db, 'users', uid, 'notifications'), {
+                            type: 'order', title: 'Order Delivered', body: 'Your order #' + orderId + ' has been delivered. Enjoy!', orderId: orderId, createdAt: serverTimestamp(), read: false
+                        }).catch(function() {});
+                    }
+                }
             });
         }
         showToast('Delivery status updated to ' + status, 'success');
+        logActivity({ type: "delivery_status_updated", orderId: orderId, detail: status });
     }).catch(function(err) {
         showToast('Failed to update delivery status: ' + err.message, 'err');
     });
@@ -413,13 +398,20 @@ function updateDeliveryStatus(orderId, status) {
 
 function updateOrderStatus(orderId, status) {
     updateDoc(doc(db, 'orders', orderId), { status: status }).then(function() {
-        mirrorOrder(orderId, { status: status });
         if (status === 'Approved') {
             getDoc(doc(db, 'orders', orderId)).then(function(snap) {
-                if (snap.exists()) notifyCustomer(orderId, snap.data().uid, 'Order Approved', 'Your order #' + orderId + ' has been approved and is being prepared.');
+                if (snap.exists()) {
+                    var uid = snap.data().uid;
+                    if (uid) {
+                        addDoc(collection(db, 'users', uid, 'notifications'), {
+                            type: 'order', title: 'Order Approved', body: 'Your order #' + orderId + ' has been approved and is being prepared.', orderId: orderId, createdAt: serverTimestamp(), read: false
+                        }).catch(function() {});
+                    }
+                }
             });
         }
         showToast('Order #' + orderId + ' updated to ' + status, 'success');
+        logActivity({ type: "order_status_updated", orderId: orderId, detail: status });
     }).catch(function(err) {
         showToast('Failed to update order: ' + err.message, 'err');
     });

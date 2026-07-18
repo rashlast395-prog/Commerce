@@ -40,7 +40,8 @@ import {
     onSnapshot,
     arrayUnion,
     serverTimestamp,
-    enableIndexedDbPersistence
+    enableIndexedDbPersistence,
+    limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ---- Firebase web config (single source of truth) ---- */
@@ -306,44 +307,25 @@ export function generateOrderId() {
 export function saveOrder(order) {
     var user = auth.currentUser;
     var orderId = order.id || generateOrderId();
-    var base = user ? collection(db, "users", user.uid, "orders") : collection(db, "guest_orders");
     var payload = Object.assign({}, order, {
         id: orderId,
+        customerId: user ? user.uid : null,
         uid: user ? user.uid : null,
         status: normalizeStatus(order.status) || "Pending",
         deliveryStatus: deliveryStatusFor(order.status || "Pending"),
         statusHistory: order.statusHistory || [{ status: normalizeStatus(order.status) || "Pending", at: serverTimestamp(), by: user ? user.uid : "system" }],
         createdAt: serverTimestamp()
     });
-    var savePromise = setDoc(doc(base, orderId), payload, { merge: true }).catch(function () {
-        return addDoc(base, payload);
-    });
-    return savePromise.then(function () {
-        var topPayload = Object.assign({}, payload);
-        delete topPayload.uid;
-        return setDoc(doc(db, "orders", orderId), topPayload, { merge: true });
-    });
+    return setDoc(doc(db, "orders", orderId), payload, { merge: true });
 }
 
 export function updateOrder(orderId, changes) {
-    var p1 = updateDoc(doc(db, "orders", orderId), changes).catch(function () {});
-    var p2 = getDoc(doc(db, "orders", orderId)).then(function (snap) {
-        var uid = snap.exists() ? snap.data().uid : null;
-        if (!uid) return;
-        return updateDoc(doc(db, "users", uid, "orders", orderId), changes).catch(function () {});
-    }).catch(function () {});
-    return Promise.all([p1, p2]);
+    return updateDoc(doc(db, "orders", orderId), changes).catch(function () {});
 }
 
 export function pushStatusHistory(orderId, status, by) {
     var entry = { status: status, at: serverTimestamp(), by: by || "system" };
-    var p1 = updateDoc(doc(db, "orders", orderId), { statusHistory: arrayUnionSafe(entry) }).catch(function () {});
-    var p2 = getDoc(doc(db, "orders", orderId)).then(function (snap) {
-        var uid = snap.exists() ? snap.data().uid : null;
-        if (!uid) return;
-        return updateDoc(doc(db, "users", uid, "orders", orderId), { statusHistory: arrayUnionSafe(entry) }).catch(function () {});
-    }).catch(function () {});
-    return Promise.all([p1, p2]);
+    return updateDoc(doc(db, "orders", orderId), { statusHistory: arrayUnionSafe(entry) }).catch(function () {});
 }
 
 export function assignRider(orderId, riderDoc) {
@@ -374,8 +356,8 @@ export function logActivity(data) {
 export function subscribeCustomerOrders(callback) {
     var user = auth.currentUser;
     if (!user) { callback([]); return function () {}; }
-    var col = collection(db, "users", user.uid, "orders");
-    var q = query(col, orderBy("createdAt", "desc"));
+    var col = collection(db, "orders");
+    var q = query(col, where("customerId", "==", user.uid), orderBy("createdAt", "desc"));
     return onSnapshot(q, function (snap) {
         var list = [];
         snap.forEach(function (d) { list.push(d.data()); });
@@ -386,8 +368,8 @@ export function subscribeCustomerOrders(callback) {
 export function loadOrders(callback) {
     var user = auth.currentUser;
     if (!user) { callback([]); return; }
-    var col = collection(db, "users", user.uid, "orders");
-    var q = query(col, orderBy("createdAt", "desc"));
+    var col = collection(db, "orders");
+    var q = query(col, where("customerId", "==", user.uid), orderBy("createdAt", "desc"));
     getDocs(q)
         .then(function (snap) {
             var list = [];
@@ -400,8 +382,8 @@ export function loadOrders(callback) {
 export function subscribeCustomerReservations(callback) {
     var user = auth.currentUser;
     if (!user) { callback([]); return function () {}; }
-    var col = collection(db, "users", user.uid, "reservations");
-    var q = query(col, orderBy("createdAt", "desc"));
+    var col = collection(db, "reservations");
+    var q = query(col, where("customerId", "==", user.uid), orderBy("createdAt", "desc"));
     return onSnapshot(q, function (snap) {
         var list = [];
         snap.forEach(function (d) { list.push(d.data()); });
@@ -424,22 +406,15 @@ export function subscribeCustomerNotifications(callback) {
 export function saveReservation(reservation) {
     var user = auth.currentUser;
     var resvId = reservation.id || ('RES-' + Math.floor(1000 + Math.random() * 9000));
-    var base = user ? collection(db, "users", user.uid, "reservations") : collection(db, "reservations");
     var payload = Object.assign({}, reservation, {
         id: resvId,
+        customerId: user ? user.uid : null,
         uid: user ? user.uid : null,
         status: reservation.status || 'pending',
         statusHistory: reservation.statusHistory || [{ status: 'pending', at: serverTimestamp(), by: 'customer' }],
         createdAt: serverTimestamp()
     });
-    var savePromise = setDoc(doc(base, resvId), payload, { merge: true }).catch(function () {
-        return addDoc(base, payload);
-    });
-    return savePromise.then(function () {
-        var topPayload = Object.assign({}, payload);
-        delete topPayload.uid;
-        return setDoc(doc(db, "reservations", resvId), topPayload, { merge: true });
-    });
+    return setDoc(doc(db, "reservations", resvId), payload, { merge: true });
 }
 
 export function saveContactMessage(message) {

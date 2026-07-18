@@ -198,7 +198,7 @@ function sendSnapshot(ws, meta) {
   let orders = [...state.orders.values()];
   let notifications = [...state.notifications.values()];
   if (meta.role === "customer") {
-    orders = orders.filter(o => o.uid === meta.uid);
+    orders = orders.filter(o => o.uid === meta.uid || o.customerId === meta.uid);
     notifications = notifications.filter(n => n.uid === meta.uid);
   } else if (meta.role === "rider") {
     orders = orders.filter(o => !o.riderId || o.riderId === meta.riderId || o.riderUid === meta.uid);
@@ -209,7 +209,7 @@ function sendSnapshot(ws, meta) {
 function recipientsForOrder(order) {
   return (meta) => {
     if (meta.role === "admin") return true;
-    if (meta.role === "customer" && meta.uid === order.uid) return true;
+    if (meta.role === "customer" && (meta.uid === order.uid || meta.uid === order.customerId)) return true;
     if (meta.role === "rider" && (meta.riderId === order.riderId || meta.uid === order.riderUid)) return true;
     return false;
   };
@@ -246,6 +246,7 @@ async function onCreateOrder(ws, meta, payload) {
   const order = {
     _id: id,
     id,
+    customerId: meta.uid || payload.uid || null,
     uid: meta.uid || payload.uid || null,
     customer: payload.customer || (meta.email || "Guest"),
     email: payload.email || meta.email || "",
@@ -356,15 +357,6 @@ async function onAssignRider(ws, meta, payload) {
   order.statusHistory.push({ status: next, at: order.assignedAt, by: meta.uid || "admin" });
   await persistOrder(order);
 
-  // Mirror to the customer's subcollection for Firestore-only clients
-  if (db && order.uid) {
-    db.collection("users").doc(order.uid).collection("orders").doc(id)
-      .set({
-        riderId: order.riderId, riderName: order.riderName, riderPhone: order.riderPhone,
-        riderVehicle: order.riderVehicle, status: next, deliveryStatus: order.deliveryStatus, assignedAt: new Date()
-      }, { merge: true }).catch(() => {});
-  }
-
   broadcast(OrderEngine.EVENTS.RIDER_ASSIGNED, order, recipientsForOrder(order));
   broadcast(OrderEngine.EVENTS.ORDER_UPDATED, order, recipientsForOrder(order));
   await addNotification({
@@ -401,11 +393,6 @@ async function onDeclineRider(ws, meta, payload) {
   order.statusHistory = order.statusHistory || [];
   order.statusHistory.push({ status: next, at: new Date().toISOString(), by: meta.uid || meta.role });
   await persistOrder(order);
-
-  if (db && order.uid) {
-    db.collection("users").doc(order.uid).collection("orders").doc(id)
-      .set({ riderId: null, riderName: null, status: next, deliveryStatus: "pending" }, { merge: true }).catch(() => {});
-  }
 
   broadcast(OrderEngine.EVENTS.RIDER_DECLINED, { orderId: id, by: riderName }, m => m.role === "admin" || (m.role === "customer" && m.uid === order.uid) || (m.role === "rider" && m.riderId === order.riderId));
   broadcast(OrderEngine.EVENTS.ORDER_UPDATED, order, recipientsForOrder(order));
