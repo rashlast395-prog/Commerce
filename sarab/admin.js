@@ -199,6 +199,7 @@ function loadDashboard() {
     loadStats();
     loadRecentOrders();
     loadRecentReservations();
+    loadRecentMessages();
 }
 
 function loadStats() {
@@ -222,6 +223,18 @@ function loadStats() {
 
     getDocs(collection(db, 'users')).then(function(snap) {
         document.getElementById('statCustomers').textContent = snap.size;
+    });
+
+    getDocs(collection(db, 'riders')).then(function(snap) {
+        document.getElementById('statRiders').textContent = snap.size;
+        var available = snap.docs.filter(function(d) { return d.data().available; }).length;
+        document.getElementById('statRidersAvailable').textContent = available;
+    });
+
+    getDocs(collection(db, 'contactMessages')).then(function(snap) {
+        var unread = snap.docs.filter(function(d) { return !d.data().reply; }).length;
+        document.getElementById('statMessages').textContent = snap.size;
+        document.getElementById('statMessagesUnread').textContent = unread;
     });
 }
 
@@ -254,6 +267,22 @@ function loadRecentReservations() {
                 '<td>' + (r.date || '') + '</td>' +
                 '<td>' + (r.time || '') + '</td>' +
                 '<td>' + (r.guests || '') + '</td>' +
+                '</tr>';
+        });
+    });
+}
+
+function loadRecentMessages() {
+    var q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'));
+    getDocs(q).then(function(snap) {
+        var tbody = document.getElementById('recentMessagesTable');
+        tbody.innerHTML = '';
+        snap.docs.slice(0, 5).forEach(function(d) {
+            var m = d.data();
+            tbody.innerHTML += '<tr>' +
+                '<td><strong>' + (m.name || '') + '</strong></td>' +
+                '<td>' + (m.subject || '-') + '</td>' +
+                '<td>' + (m.createdAt ? new Date(m.createdAt.seconds * 1000).toLocaleDateString() : '-') + '</td>' +
                 '</tr>';
         });
     });
@@ -463,6 +492,18 @@ function renderReservations(docs) {
     tbody.innerHTML = '';
     docs.forEach(function(d) {
         var r = d.data();
+        var status = r.status || 'pending';
+        var statusColor = status === 'approved' ? '#27ae60' : status === 'declined' ? '#e74c3c' : '#f39c12';
+        var statusText = status.charAt(0).toUpperCase() + status.slice(1);
+        
+        var actions = '';
+        if (status === 'pending') {
+            actions = '<button class="admin-btn admin-btn-sm admin-btn-success approve-res-btn" data-id="' + d.id + '"><i class="fas fa-check me-1"></i>Approve</button>' +
+                      '<button class="admin-btn admin-btn-sm admin-btn-danger decline-res-btn" data-id="' + d.id + '"><i class="fas fa-times me-1"></i>Decline</button>';
+        } else {
+            actions = '<span class="badge bg-' + (status === 'approved' ? 'success' : 'danger') + '">' + statusText + '</span>';
+        }
+
         tbody.innerHTML += '<tr>' +
             '<td><strong>' + (r.name || '') + '</strong></td>' +
             '<td>' + (r.email || '') + '</td>' +
@@ -471,8 +512,33 @@ function renderReservations(docs) {
             '<td>' + (r.date || '') + '</td>' +
             '<td>' + (r.time || '') + '</td>' +
             '<td>' + (r.notes || '-') + '</td>' +
-            '<td>' + (r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleString() : '-') + '</td>' +
+            '<td><span style="background:' + statusColor + ';color:#fff;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">' + statusText + '</span></td>' +
+            '<td><div class="d-flex gap-1">' + actions + '</div></td>' +
             '</tr>';
+    });
+
+    document.querySelectorAll('.approve-res-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var resId = this.getAttribute('data-id');
+            updateReservationStatus(resId, 'approved');
+        });
+    });
+
+    document.querySelectorAll('.decline-res-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var resId = this.getAttribute('data-id');
+            updateReservationStatus(resId, 'declined');
+        });
+    });
+}
+
+function updateReservationStatus(resId, status) {
+    var resRef = doc(db, 'reservations', resId);
+    updateDoc(resRef, { status: status }).then(function() {
+        showToast('Reservation ' + status, 'success');
+        loadReservations();
+    }).catch(function(err) {
+        showToast('Failed to update reservation: ' + err.message, 'err');
     });
 }
 

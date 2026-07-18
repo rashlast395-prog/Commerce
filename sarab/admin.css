@@ -409,6 +409,16 @@ h1, h2, h3, h4, h5 {
   box-shadow: 0 8px 22px rgba(45, 106, 79, 0.4);
   color: #fff;
 }
+.admin-btn-danger {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+.admin-btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(231, 76, 60, 0.4);
+  color: #fff;
+}
 
 /* ===================== MODALS ===================== */
 .admin-modal {

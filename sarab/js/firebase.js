@@ -193,6 +193,7 @@ window.YussifFirestore = {
                         : collection(db, "reservations");
         var payload = Object.assign({}, reservation, {
             uid: user ? user.uid : null,
+            status: 'pending',
             createdAt: serverTimestamp()
         });
         var savePromise = addDoc(base, payload);

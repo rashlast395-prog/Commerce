@@ -16,8 +16,7 @@ import {
     query,
     orderBy,
     serverTimestamp,
-    onSnapshot,
-    where
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -77,6 +76,7 @@ function initRider() {
     setupModals();
     setupStatusToggle();
     setupProfile();
+    setupFilters();
     loadDashboard();
     loadAvailableOrders();
     loadMyDeliveries();
@@ -465,12 +465,17 @@ function updateOrderStatus(orderId, status) {
     });
 }
 
-document.getElementById('deliveryStatusFilter').addEventListener('change', function() {
-    loadMyDeliveries();
-});
+function setupFilters() {
+    var filter = document.getElementById('deliveryStatusFilter');
+    if (filter) {
+        filter.addEventListener('change', function() {
+            loadMyDeliveries();
+        });
+    }
+}
 
 /* ============================================================
-   MENU
+   MODALS
    ============================================================ */
 function loadMenu() {
     if (menuUnsubscribe) menuUnsubscribe();

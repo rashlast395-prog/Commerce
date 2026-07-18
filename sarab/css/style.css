@@ -1697,125 +1697,280 @@ section {
 }
 
 /* ===================== FOOTER ===================== */
-footer {
-  background: var(--dark);
-  padding: 68px 0 0;
+.site-footer {
+  background: linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%);
+  padding: 80px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+  background-size: 200% 100%;
+  animation: gradientShift 3s ease infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.footer-top {
+  padding-bottom: 50px;
 }
 .fnm {
   font-family: "Playfair Display", serif;
-  font-size: 1.9rem;
+  font-size: 2.2rem;
   font-weight: 900;
   color: #fff;
+  margin-bottom: 18px;
+  position: relative;
+  display: inline-block;
+}
+.fnm::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
 }
 .fnm span {
   color: var(--primary);
 }
 .fdesc {
-  color: #777;
-  font-size: 0.86rem;
+  color: #888;
+  font-size: 0.9rem;
   line-height: 1.8;
-  margin-top: 9px;
+  margin-top: 18px;
+  max-width: 320px;
 }
 .fsoc {
   display: flex;
-  gap: 9px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
 }
 .fsoc a {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.06);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #777;
-  font-size: 0.88rem;
-  transition: 0.3s;
+  color: #888;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.fsoc a::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.fsoc a:hover::before {
+  opacity: 1;
 }
 .fsoc a:hover {
-  background: var(--primary);
   color: #fff;
   transform: translateY(-3px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(232, 40, 26, 0.3);
+}
+.fsoc a i {
+  position: relative;
+  z-index: 1;
 }
 .ftit {
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 18px;
-  padding-bottom: 9px;
+  margin-bottom: 22px;
+  padding-bottom: 12px;
   border-bottom: 2px solid var(--primary);
   display: inline-block;
   font-family: "Poppins", sans-serif;
+  position: relative;
+}
+.ftit::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--secondary);
 }
 .flinks li {
   list-style: none;
-  margin-bottom: 9px;
+  margin-bottom: 11px;
 }
 .flinks a {
-  color: #777;
-  font-size: 0.86rem;
+  color: #888;
+  font-size: 0.88rem;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  transition: 0.3s;
+  gap: 8px;
+  transition: all 0.3s;
+  text-decoration: none;
 }
 .flinks a:hover {
   color: var(--secondary);
-  padding-left: 5px;
+  padding-left: 6px;
 }
 .flinks a i {
   color: var(--primary);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
+  transition: transform 0.3s;
+}
+.flinks a:hover i {
+  transform: translateX(3px);
 }
 .fci {
   display: flex;
   align-items: flex-start;
-  gap: 11px;
-  margin-bottom: 14px;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+.fci:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 .fciico {
-  width: 34px;
-  height: 34px;
-  border-radius: 7px;
-  background: rgba(232, 40, 26, 0.14);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(232, 40, 26, 0.2), rgba(232, 40, 26, 0.05));
+  border: 1px solid rgba(232, 40, 26, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--primary);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   flex-shrink: 0;
+  transition: all 0.3s;
+}
+.fci:hover .fciico {
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  color: #fff;
+  border-color: var(--primary);
+  transform: scale(1.05);
 }
 .fciinfo {
-  color: #777;
-  font-size: 0.83rem;
+  color: #888;
+  font-size: 0.85rem;
   line-height: 1.6;
 }
 .fciinfo strong {
   color: #bbb;
   display: block;
-  font-size: 0.77rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
 }
 .fbot {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 18px 0;
-  margin-top: 46px;
+  padding: 16px 0;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.fbot .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 .fbot p {
-  color: #555;
-  font-size: 0.8rem;
+  color: #666;
+  font-size: 0.82rem;
   margin: 0;
+  line-height: 1.6;
 }
 .fbot span {
   color: var(--primary);
 }
-.fbot a {
-  color: #555;
-  font-size: 0.8rem;
-  margin-left: 18px;
+.fbot .footer-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.fbot a:hover {
+.fbot .footer-links a {
+  color: #666;
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: color 0.3s;
+  white-space: nowrap;
+}
+.fbot .footer-links a:hover {
   color: var(--secondary);
+}
+.back-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9990;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), #c01e12);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(232, 40, 26, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.back-to-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.back-to-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(232, 40, 26, 0.5);
+}
+@media (max-width: 767px) {
+  .site-footer {
+    padding: 50px 0 0;
+  }
+  .fbot .d-flex {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px !important;
+  }
+  .fbot a {
+    margin-left: 0;
+    margin: 0 8px;
+  }
 }
 
 /* ===================== UTILITIES ===================== */

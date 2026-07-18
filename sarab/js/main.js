@@ -1407,33 +1407,7 @@ document.getElementById('delTime').addEventListener('change', function() {
     }
 });
 
-/* Pay Now */
-ckPay.addEventListener('click', function() {
-    var activeTab = document.querySelector('.paytab.active');
-    var method = activeTab ? activeTab.getAttribute('data-pay') : 'cash';
-    var btn = this;
-    var original = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
 
-    setTimeout(function() {
-        btn.disabled = false;
-        btn.innerHTML = original;
-        closeCheckout();
-        saveOrder(cartItems.slice(), getCartSubtotal(), method);
-        openTracking(method);
-        cartItems = [];
-        appliedPromo = null;
-        updateCartUI();
-        cartOpen = false;
-        cartSide.classList.remove('open');
-        document.body.style.overflow = '';
-        promoMsg.textContent = '';
-        promoMsg.className = 'cspmsg';
-        promoInput.value = '';
-        showToast('Order placed successfully!', 'success');
-    }, 2200);
-});
 
 /* Tracking modal */
 var trackModal = document.getElementById('trackModal');
@@ -2491,12 +2465,12 @@ updateCartUI = function() {
 };
 
 /* ============================================================
-   CHECKOUT VALIDATION
+   CHECKOUT VALIDATION & PROCESSING
    ============================================================ */
-var origCkPay = ckPay.onclick;
 ckPay.addEventListener('click', function() {
     var activeTab = document.querySelector('.paytab.active');
     var method = activeTab ? activeTab.getAttribute('data-pay') : 'cash';
+    
     if (method === 'mobile') {
         var phone = document.getElementById('mobPhone').value.trim();
         var pin = document.getElementById('mobPin').value.trim();
@@ -2517,6 +2491,29 @@ ckPay.addEventListener('click', function() {
         if (!bankRef) { showToast('Please enter transaction reference', 'err'); return; }
         if (!bankName) { showToast('Please enter sender name', 'err'); return; }
     }
+    
+    var btn = this;
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+    setTimeout(function() {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        closeCheckout();
+        saveOrder(cartItems.slice(), getCartSubtotal(), method);
+        openTracking(method);
+        cartItems = [];
+        appliedPromo = null;
+        updateCartUI();
+        cartOpen = false;
+        cartSide.classList.remove('open');
+        document.body.style.overflow = '';
+        promoMsg.textContent = '';
+        promoMsg.className = 'cspmsg';
+        promoInput.value = '';
+        showToast('Order placed successfully!', 'success');
+    }, 2200);
 });
 
 
@@ -2597,21 +2594,25 @@ lightbox.addEventListener('click', function(e) {
 });
 
 /* ============================================================
-   BACK TO TOP ENHANCEMENTS
+   BACK TO TOP
    ============================================================ */
-var btt = document.getElementById('btt');
-window.addEventListener('scroll', function() {
-    if (window.scrollY > 500) {
-        btt.classList.add('show');
-    } else {
-        btt.classList.remove('show');
-    }
-});
+var backToTopBtn = document.getElementById('backToTop');
+if (backToTopBtn) {
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 500) {
+            backToTopBtn.classList.add('show');
+        } else {
+            backToTopBtn.classList.remove('show');
+        }
+    });
+    backToTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
 
 /* ============================================================
    INITIALIZE
    ============================================================ */
-updateMobileNavCart();
 updateOrdersBtn();
 showCartSuggestions();
 
