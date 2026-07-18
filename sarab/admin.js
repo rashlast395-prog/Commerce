@@ -1,38 +1,12 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-    getFirestore,
-    collection,
-    doc,
-    setDoc,
-    addDoc,
-    deleteDoc,
-    getDocs,
-    getDoc,
-    query,
-    orderBy,
-    serverTimestamp,
-    updateDoc,
-    onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDb7Sys_Mh_BLOr1YfB6Kug_9K6_IuLoqg",
-    authDomain: "fire-c1a91.firebaseapp.com",
-    projectId: "fire-c1a91",
-    storageBucket: "fire-c1a91.firebasestorage.app",
-    messagingSenderId: "757687516476",
-    appId: "1:757687516476:web:e41f779542e841d0ab3239"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const ADMIN_EMAIL = 'rashlast395@gmail.com';
+    app, auth, db,
+    ADMIN_EMAIL, ADMIN_NAME, isAdmin,
+    ORDER_STATUS, ORDER_STATUS_ALT, ALL_STATUSES,
+    canTransition, normalizeStatus, deliveryStatusFor,
+    collection, doc, setDoc, addDoc, updateDoc, deleteDoc,
+    getDocs, getDoc, query, orderBy, serverTimestamp, onSnapshot,
+    notify, logActivity, saveOrder, updateOrder, pushStatusHistory
+} from './js/firebase-shared.js';
 
 var currentUser = null;
 var ordersUnsubscribe = null;
@@ -344,12 +318,12 @@ function renderOrders(docs) {
     tbody.innerHTML = '';
     docs.forEach(function(d) {
         var o = d.data();
-        var statuses = ['Order Received', 'Preparing', 'Out for Delivery', 'Delivered'];
+        var statuses = ['Pending', 'Approved', 'Assigned', 'Preparing', 'Picked Up', 'On The Way', 'Near Customer', 'Delivered', 'Completed', 'Paused', 'Cancelled'];
         var statusOptions = statuses.map(function(s) {
-            return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + s + '</option>';
+            return '<option value="' + s + '"' + (normalizeStatus(o.status) === s ? ' selected' : '') + '>' + s + '</option>';
         }).join('');
 
-        var deliveryStatuses = ['pending', 'assigned', 'picked_up', 'delivered'];
+        var deliveryStatuses = ['pending', 'assigned', 'picked_up', 'on_the_way', 'delivered'];
         var deliveryOptions = deliveryStatuses.map(function(s) {
             return '<option value="' + s + '"' + (o.deliveryStatus === s ? ' selected' : '') + '>' + s + '</option>';
         }).join('');
@@ -401,9 +375,36 @@ function renderOrders(docs) {
     applyOrderFilter();
 }
 
+/* Mirror an order change into the customer's subcollection so the
+   customer dashboard updates in real time. No-op if uid unknown. */
+function mirrorOrder(orderId, changes) {
+    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+        if (!snap.exists()) return;
+        var uid = snap.data().uid;
+        if (!uid) return;
+        updateDoc(doc(db, 'users', uid, 'orders', orderId), changes).catch(function() {});
+    }).catch(function() {});
+}
+
+/* Push a notification to a customer (their own subcollection) and the
+   global notifications collection for the Command Center. */
+function notifyCustomer(orderId, uid, title, body) {
+    if (uid) addDoc(collection(db, 'users', uid, 'notifications'), {
+        type: 'order', title: title, body: body, orderId: orderId, createdAt: serverTimestamp(), read: false
+    }).catch(function() {});
+    addDoc(collection(db, 'notifications'), {
+        type: 'order', title: title, body: body, orderId: orderId, createdAt: serverTimestamp(), read: false
+    }).catch(function() {});
+}
+
 function updateDeliveryStatus(orderId, status) {
-    var orderRef = doc(db, 'orders', orderId);
-    updateDoc(orderRef, { deliveryStatus: status }).then(function() {
+    updateDoc(doc(db, 'orders', orderId), { deliveryStatus: status }).then(function() {
+        mirrorOrder(orderId, { deliveryStatus: status });
+        if (status === 'delivered') {
+            getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+                if (snap.exists()) notifyCustomer(orderId, snap.data().uid, 'Order Delivered', 'Your order #' + orderId + ' has been delivered. Enjoy!');
+            });
+        }
         showToast('Delivery status updated to ' + status, 'success');
     }).catch(function(err) {
         showToast('Failed to update delivery status: ' + err.message, 'err');
@@ -411,8 +412,13 @@ function updateDeliveryStatus(orderId, status) {
 }
 
 function updateOrderStatus(orderId, status) {
-    var orderRef = doc(db, 'orders', orderId);
-    updateDoc(orderRef, { status: status }).then(function() {
+    updateDoc(doc(db, 'orders', orderId), { status: status }).then(function() {
+        mirrorOrder(orderId, { status: status });
+        if (status === 'Approved') {
+            getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+                if (snap.exists()) notifyCustomer(orderId, snap.data().uid, 'Order Approved', 'Your order #' + orderId + ' has been approved and is being prepared.');
+            });
+        }
         showToast('Order #' + orderId + ' updated to ' + status, 'success');
     }).catch(function(err) {
         showToast('Failed to update order: ' + err.message, 'err');
@@ -780,20 +786,33 @@ function saveReply(e) {
    UTILITIES
    ============================================================ */
 function getStatusBadge(status) {
+    var s = normalizeStatus(status);
     var color = '#888';
-    if (status === 'Order Received') color = '#3498db';
-    else if (status === 'Preparing') color = '#f39c12';
-    else if (status === 'Out for Delivery') color = '#e74c3c';
-    else if (status === 'Delivered') color = '#27ae60';
-    return '<span style="background:' + color + ';color:#fff;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">' + status + '</span>';
+    if (s === 'Pending') color = '#f39c12';
+    else if (s === 'Approved') color = '#27ae60';
+    else if (s === 'Assigned') color = '#3498db';
+    else if (s === 'Rider Accepted') color = '#2e86de';
+    else if (s === 'Preparing') color = '#f39c12';
+    else if (s === 'Picked Up') color = '#2e86de';
+    else if (s === 'On The Way') color = '#e74c3c';
+    else if (s === 'Near Customer') color = '#e74c3c';
+    else if (s === 'Delivered') color = '#27ae60';
+    else if (s === 'Completed') color = '#27ae60';
+    else if (s === 'Rejected') color = '#e74c3c';
+    else if (s === 'Paused') color = '#888';
+    else if (s === 'Cancelled') color = '#e74c3c';
+    else if (s === 'Returned') color = '#e74c3c';
+    else if (s === 'Refunded') color = '#9b59b6';
+    return '<span style="background:' + color + ';color:#fff;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">' + s + '</span>';
 }
 
 function getDeliveryBadge(status) {
     var color = '#888';
     if (status === 'assigned') color = '#3498db';
     else if (status === 'picked_up') color = '#f39c12';
+    else if (status === 'on_the_way') color = '#e74c3c';
     else if (status === 'delivered') color = '#27ae60';
-    else if (status === 'pending') color = '#e74c3c';
+    else if (status === 'pending') color = '#f39c12';
     return '<span style="background:' + color + ';color:#fff;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;">' + (status || 'Pending') + '</span>';
 }
 

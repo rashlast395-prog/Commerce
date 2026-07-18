@@ -1,28 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc,
-    serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDb7Sys_Mh_BLOr1YfB6Kug_9K6_IuLoqg",
-    authDomain: "fire-c1a91.firebaseapp.com",
-    projectId: "fire-c1a91",
-    storageBucket: "fire-c1a91.firebasestorage.app",
-    messagingSenderId: "757687516476",
-    appId: "1:757687516476:web:e41f779542e841d0ab3239"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    app, auth, db
+} from './js/firebase-shared.js';
 
 var currentUser = null;
 

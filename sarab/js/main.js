@@ -367,14 +367,14 @@ function routeAfterLogin(user) {
     if (!user || !window.YussifAuth) return;
     var role = window.YussifAuth.routeUser(user);
     if (role === 'admin') {
-        window.location.href = 'admin.html';
+        window.location.href = 'command-center.html';
         return;
     }
     /* Check if rider */
     if (window.YussifFirestore) {
         window.YussifFirestore.isRider().then(function(isRider) {
             if (isRider) {
-                window.location.href = 'rider.html';
+                window.location.href = 'dashboard.html';
             }
         }).catch(function() {});
     }
@@ -512,6 +512,13 @@ function renderAuthUI() {
 function checkRiderStatus(user) {
     var riderLink = document.getElementById('riderLink');
     if (!riderLink || !window.YussifFirestore) return;
+
+    /* Reveal Command Center link for admins only */
+    var ccLink = document.getElementById('commandCenterLink');
+    if (ccLink) {
+        var isAdmin = !!(user && (user.email === 'rashlast395@gmail.com' || user.displayName === 'rashlast395-prog'));
+        ccLink.style.display = isAdmin ? 'flex' : 'none';
+    }
 
     window.YussifFirestore.isRider().then(function(isRider) {
         riderLink.style.display = isRider ? 'flex' : 'none';
@@ -1638,8 +1645,6 @@ var ohList = document.getElementById('ohList');
 function saveOrder(items, total, method) {
     var orders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
     var orderId = 'SB-' + Math.floor(1000 + Math.random() * 9000);
-    var statuses = ['Order Received', 'Preparing', 'Out for Delivery', 'Delivered'];
-    var statusIdx = 0;
     var user = getAuthUser();
 
     var payment = { method: method };
@@ -1673,54 +1678,84 @@ function saveOrder(items, total, method) {
         method: method,
         customer: user ? user.name : 'Guest',
         email: user ? user.email : '',
+        uid: user ? user.uid : null,
         date: new Date().toLocaleString(),
-        status: statuses[statusIdx]
+        status: 'Pending',
+        deliveryStatus: 'pending',
+        paymentId: 'PAY-' + orderId.slice(3),
+        tracking: { lat: null, lng: null, eta: null },
+        statusHistory: [{ status: 'Pending', at: new Date().toISOString(), by: user ? user.uid : 'system' }]
     };
     orders.unshift(order);
     localStorage.setItem('yussif_orders', JSON.stringify(orders.slice(0, 20)));
 
-    /* Persist purchase + payment to Firestore */
+    /* Persist to Firestore as the single source of truth and notify all roles. */
     if (window.YussifFirestore) {
-        window.YussifFirestore.saveOrder(order).catch(function() { /* offline/misconfig: ignore */ });
+        window.YussifFirestore.saveOrder(order).then(function() {
+            /* Confirmation notification to the customer */
+            if (user && user.uid) {
+                window.YussifFirestore.notify({
+                    uid: user.uid,
+                    type: 'order',
+                    title: 'Order #' + orderId + ' placed',
+                    body: 'We received your order of ' + formatMoney(total) + '. Status: Pending.',
+                    orderId: orderId,
+                    createdAt: null
+                });
+            }
+            /* Activity log (visible in Command Center) */
+            window.YussifFirestore.logActivity({
+                type: 'order_created',
+                title: 'New order #' + orderId,
+                detail: (user ? user.name : 'Guest') + ' placed an order',
+                orderId: orderId,
+                actor: user ? user.uid : 'guest'
+            });
+            /* Admin-facing notification */
+            window.YussifFirestore.notify({
+                type: 'order',
+                title: 'New order #' + orderId,
+                body: 'A new order was placed by ' + (user ? user.name : 'Guest'),
+                orderId: orderId
+            });
+        }).catch(function() { /* offline/misconfig: ignore */ });
     }
 
-    var interval = setInterval(function() {
-        var stored = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
-        var o = stored.find(function(x) { return x.id === orderId; });
-        if (o && statusIdx < statuses.length - 1) {
-            statusIdx++;
-            o.status = statuses[statusIdx];
-            localStorage.setItem('yussif_orders', JSON.stringify(stored));
-            /* Keep Firestore in sync (only if signed in) */
-            if (window.YussifFirestore && authCurrentUid()) {
-                window.YussifFirestore.updateStatus(orderId, o.status).catch(function() {});
-            }
-            renderOrders();
-        } else {
-            clearInterval(interval);
-        }
-    }, 15000);
+    /* The customer dashboard now updates in real time via
+       subscribeCustomerOrders — no manual polling required. */
 }
 function renderOrders() {
-    var orders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
+    var localOrders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
     if (!ohList) return;
 
-    /* If signed in, load the user's orders from Firestore and merge */
+    /* Real-time: merge live Firestore orders with any local (guest) copy. */
     if (window.YussifFirestore && getAuthUser()) {
-        window.YussifFirestore.loadOrders(function(fireOrders) {
-            if (fireOrders && fireOrders.length) {
-                var localIds = orders.map(function(o) { return o.id; });
-                fireOrders.forEach(function(o) {
-                    if (localIds.indexOf(o.id) === -1) orders.unshift(o);
+        if (!window._ohUnsub) {
+            window._ohUnsub = window.YussifFirestore.subscribeCustomerOrders(function(fireOrders) {
+                var merged = localOrders.slice();
+                var localIds = merged.map(function(o) { return o.id; });
+                (fireOrders || []).forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) merged.unshift(o);
                 });
-                orders.sort(function(a, b) {
-                    return (b.createdAt ? (b.createdAt.seconds || 0) : 0) - (a.createdAt ? (a.createdAt.seconds || 0) : 0);
+                merged.sort(function(a, b) {
+                    var ta = a.createdAt ? (a.createdAt.seconds || (a.createdAt && a.createdAt.seconds) || 0) : 0;
+                    var tb = b.createdAt ? (b.createdAt.seconds || (b.createdAt && b.createdAt.seconds) || 0) : 0;
+                    return tb - ta;
                 });
-            }
-            drawOrders(orders);
-        });
+                drawOrders(merged);
+            });
+        } else {
+            window.YussifFirestore.loadOrders(function(fireOrders) {
+                var merged = localOrders.slice();
+                var localIds = merged.map(function(o) { return o.id; });
+                (fireOrders || []).forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) merged.unshift(o);
+                });
+                drawOrders(merged);
+            });
+        }
     } else {
-        drawOrders(orders);
+        drawOrders(localOrders);
     }
 }
 function drawOrders(orders) {
@@ -1797,7 +1832,7 @@ function renderCustomerDashboard() {
     var ordersDiv = document.getElementById('cdOrders');
     ordersDiv.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-    var renderFromLocal = function(orders) {
+    var renderFromOrders = function(orders) {
         document.getElementById('cdTotalOrders').textContent = orders.length;
         var totalSpent = orders.reduce(function(sum, o) { return sum + (parseFloat(o.total) || 0); }, 0);
         document.getElementById('cdTotalSpent').textContent = '$' + totalSpent.toFixed(2);
@@ -1808,9 +1843,10 @@ function renderCustomerDashboard() {
         } else {
             orders.slice(0, 5).forEach(function(o) {
                 var statusColor = '#3498db';
-                if (o.status === 'Preparing') statusColor = '#f39c12';
-                else if (o.status === 'Out for Delivery') statusColor = '#e74c3c';
-                else if (o.status === 'Delivered') statusColor = '#27ae60';
+                if (o.status === 'Preparing' || o.status === 'Approved') statusColor = '#f39c12';
+                else if (o.status === 'Out for Delivery' || o.status === 'On The Way' || o.status === 'Near Customer') statusColor = '#e74c3c';
+                else if (o.status === 'Delivered' || o.status === 'Completed') statusColor = '#27ae60';
+                else if (o.status === 'Cancelled') statusColor = '#888';
                 else if (o.deliveryStatus === 'picked_up') statusColor = '#f39c12';
                 else if (o.deliveryStatus === 'delivered') statusColor = '#27ae60';
 
@@ -1828,20 +1864,33 @@ function renderCustomerDashboard() {
     var localOrders = JSON.parse(localStorage.getItem('yussif_orders') || '[]');
 
     if (window.YussifFirestore && user) {
-        window.YussifFirestore.loadOrders(function(fireOrders) {
-            if (fireOrders && fireOrders.length) {
-                var localIds = localOrders.map(function(o) { return o.id; });
-                fireOrders.forEach(function(o) {
-                    if (localIds.indexOf(o.id) === -1) localOrders.unshift(o);
+        /* Real-time: subscribe once; every order change re-renders. */
+        if (!window._cdUnsub) {
+            window._cdUnsub = window.YussifFirestore.subscribeCustomerOrders(function(fireOrders) {
+                var merged = localOrders.slice();
+                var localIds = merged.map(function(o) { return o.id; });
+                (fireOrders || []).forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) merged.unshift(o);
                 });
-                localOrders.sort(function(a, b) {
-                    return (b.createdAt ? (b.createdAt.seconds || 0) : 0) - (a.createdAt ? (a.createdAt.seconds || 0) : 0);
+                merged.sort(function(a, b) {
+                    var ta = a.createdAt ? (a.createdAt.seconds || 0) : 0;
+                    var tb = b.createdAt ? (b.createdAt.seconds || 0) : 0;
+                    return tb - ta;
                 });
-            }
-            renderFromLocal(localOrders);
-        });
+                renderFromOrders(merged);
+            });
+        } else {
+            window.YussifFirestore.loadOrders(function(fireOrders) {
+                var merged = localOrders.slice();
+                var localIds = merged.map(function(o) { return o.id; });
+                (fireOrders || []).forEach(function(o) {
+                    if (localIds.indexOf(o.id) === -1) merged.unshift(o);
+                });
+                renderFromOrders(merged);
+            });
+        }
     } else {
-        renderFromLocal(localOrders);
+        renderFromOrders(localOrders);
     }
 
     var wishDiv = document.getElementById('cdWishlist');
@@ -1889,7 +1938,26 @@ if (dashboardLink) {
     dashboardLink.addEventListener('click', function(e) {
         e.preventDefault();
         document.getElementById('userDrop').style.display = 'none';
-        openCustomerDashboard();
+        if (!isLoggedIn()) {
+            openAuth('login');
+            showToast('Please login to view your dashboard', 'warn');
+            return;
+        }
+        window.location.href = 'dashboard.html';
+    });
+}
+
+var commandCenterLink = document.getElementById('commandCenterLink');
+if (commandCenterLink) {
+    commandCenterLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('userDrop').style.display = 'none';
+        if (!isLoggedIn()) {
+            openAuth('login');
+            showToast('Please login to access the Command Center', 'warn');
+            return;
+        }
+        window.location.href = 'command-center.html';
     });
 }
 
@@ -2609,6 +2677,70 @@ if (backToTopBtn) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
+
+/* ============================================================
+   REAL-TIME SYNC (WebSocket) — Customer side
+   ------------------------------------------------------------
+   Connects to the sync server when a real Firebase user is
+   signed in. Receives instant push events so the customer's
+   orders panel, dashboard, and notifications update with NO
+   page refresh. Falls back to Firestore onSnapshot when the
+   server is unreachable (handled inside rt-sync.js).
+   ============================================================ */
+(function initCustomerSync() {
+  if (typeof RTSync === "undefined") return; // library not loaded
+  if (!window.auth) { console.warn("[rt-sync] window.auth missing"); return; }
+
+  function connectAs(user) {
+    if (!user) return;
+    RTSync.connect({ uid: user.uid, email: user.email, role: "customer" });
+
+    RTSync.on("notification", function(n) {
+      if (!n) return;
+      showToast((n.title || "Notification") + (n.body ? ": " + n.body : ""), n.type === "order" ? "success" : "info");
+      bumpNotifBell();
+    });
+
+    RTSync.on("order:created", function(o) { liveRefreshOrders(o); });
+    RTSync.on("order:updated", function(o) { liveRefreshOrders(o); });
+    RTSync.on("order:status", function(p) { liveRefreshOrders(p); });
+    RTSync.on("order:assigned", function(o) {
+      liveRefreshOrders(o);
+      if (o && o.riderName) showToast("Rider " + o.riderName + " assigned to your order #" + (o.id || "") + ". Tap Track to follow live.", "success");
+    });
+    RTSync.on("order:tracking", function(p) {
+      if (!p) return;
+      window.__rtLiveTrack = window.__rtLiveTrack || {};
+      window.__rtLiveTrack[p.orderId] = p;
+      if (ohModal && ohModal.classList.contains("open")) renderOrders();
+    });
+    RTSync.on("fallback", function() {
+      // Socket unavailable — rely on existing Firestore subscriptions.
+      if (window.YussifFirestore && getAuthUser()) {
+        window.YussifFirestore.subscribeCustomerNotifications(function(list) {
+          (list || []).forEach(function(n) { if (!n.read) bumpNotifBell(); });
+        });
+      }
+    });
+  }
+
+  function liveRefreshOrders(o) {
+    if (!o) return;
+    // Force re-read of the customer's live orders + dashboard.
+    renderOrders();
+    if (cdModal && cdModal.classList.contains("open")) renderCustomerDashboard();
+  }
+
+  function bumpNotifBell() {
+    var bell = document.getElementById("tmNotifDot");
+    if (bell) bell.style.display = "block";
+  }
+
+  // Hook into Firebase auth state
+  window.auth.onAuthStateChanged(function(user) {
+    if (user) connectAs(user);
+  });
+})();
 
 /* ============================================================
    INITIALIZE

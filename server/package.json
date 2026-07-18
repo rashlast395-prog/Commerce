@@ -1,0 +1,18 @@
+{
+  "name": "richys-eat-sync-server",
+  "version": "1.0.0",
+  "description": "Real-time synchronization server (WebSockets) for the Richy's Eat order management platform. Acts as the authoritative event broadcaster in front of Firestore.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "firebase-admin": "^12.7.0"
+  }
+}

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Richy's Eat — Operations Command Center</title>
+    <meta name="theme-color" content="#0c0f1a"/>
+    <link href="../sarab/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="../sarab/css/all.min.css" rel="stylesheet"/>
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link href="command-center.css" rel="stylesheet"/>
+</head>
+<body class="occ-body">
+
+<!-- ===== ACCESS DENIED OVERLAY ===== -->
+<div id="occDenied" class="occ-denied" style="display:none;">
+    <div class="occ-denied-card">
+        <i class="fas fa-lock"></i>
+        <h2>Access Restricted</h2>
+        <p>The Operations Command Center is available to Administrators only.</p>
+        <a href="../sarab/index.html" class="occ-btn occ-btn-primary">Back to Site</a>
+    </div>
+</div>
+
+<!-- ===== TOP BAR ===== -->
+<header class="occ-topbar">
+    <div class="occ-topbar-left">
+        <button class="occ-icon-btn" id="occSidebarToggle" title="Toggle menu"><i class="fas fa-bars"></i></button>
+        <div class="occ-brand"><i class="fas fa-satellite-dish"></i><span>Command Center</span></div>
+        <span class="occ-live-badge"><span class="occ-live-dot"></span> LIVE</span>
+    </div>
+
+    <div class="occ-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="occGlobalSearch" placeholder="Search orders, customers, riders, reservations…  ( / )" autocomplete="off"/>
+        <div class="occ-search-results" id="occSearchResults"></div>
+    </div>
+
+    <div class="occ-topbar-right">
+        <button class="occ-icon-btn" id="occThemeToggle" title="Toggle theme"><i class="fas fa-moon"></i></button>
+        <button class="occ-icon-btn" id="occNotifBell" title="Notifications">
+            <i class="fas fa-bell"></i><span class="occ-badge" id="occNotifBadge" style="display:none;">0</span>
+        </button>
+        <div class="occ-user">
+            <div class="occ-avatar" id="occAdminAvatar"><i class="fas fa-user-shield"></i></div>
+            <div class="occ-user-meta">
+                <strong id="occAdminName">Administrator</strong>
+                <small id="occAdminEmail">admin@richyseat.com</small>
+            </div>
+        </div>
+        <button class="occ-icon-btn" id="occLogout" title="Sign out"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+</header>
+
+<div class="occ-shell">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="occ-sidebar" id="occSidebar">
+        <nav class="occ-nav">
+            <a href="#" class="occ-nav-item active" data-view="overview"><i class="fas fa-border-all"></i> Overview</a>
+            <a href="#" class="occ-nav-item" data-view="orders"><i class="fas fa-receipt"></i> Live Orders <span class="occ-nav-count" id="navOrdersCount">0</span></a>
+            <a href="#" class="occ-nav-item" data-view="map"><i class="fas fa-map-location-dot"></i> Delivery Map</a>
+            <a href="#" class="occ-nav-item" data-view="riders"><i class="fas fa-motorcycle"></i> Rider Control <span class="occ-nav-count" id="navRidersCount">0</span></a>
+            <a href="#" class="occ-nav-item" data-view="reservations"><i class="fas fa-calendar-check"></i> Reservations <span class="occ-nav-count" id="navResvCount">0</span></a>
+            <a href="#" class="occ-nav-item" data-view="activity"><i class="fas fa-stream"></i> Activity Feed</a>
+            <a href="#" class="occ-nav-item" data-view="notifications"><i class="fas fa-bell"></i> Notifications <span class="occ-nav-count" id="navNotifCount">0</span></a>
+            <a href="#" class="occ-nav-item" data-view="analytics"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="#" class="occ-nav-item" data-view="insights"><i class="fas fa-brain"></i> Performance</a>
+            <a href="#" class="occ-nav-item" data-view="health"><i class="fas fa-heart-pulse"></i> System Health</a>
+            <a href="#" class="occ-nav-item" data-view="export"><i class="fas fa-file-export"></i> Export Center</a>
+        </nav>
+        <div class="occ-sidebar-foot">
+            <div class="occ-health-mini">
+                <span class="occ-dot green" id="occHealthMini"></span> All systems operational
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="occ-main">
+
+        <!-- ===== OVERVIEW ===== -->
+        <section class="occ-view active" id="view-overview">
+            <div class="occ-view-head">
+                <div>
+                    <h1>Business Overview</h1>
+                    <p id="occOverviewSub">Real-time snapshot of the entire platform.</p>
+                </div>
+                <div class="occ-quick-actions" id="occQuickActions">
+                    <button class="occ-qa" data-qa="order"><i class="fas fa-plus"></i> Create Order</button>
+                    <button class="occ-qa" data-qa="reservation"><i class="fas fa-calendar-plus"></i> Reservation</button>
+                    <button class="occ-qa" data-qa="rider"><i class="fas fa-motorcycle"></i> Add Rider</button>
+                    <button class="occ-qa" data-qa="customer"><i class="fas fa-user-plus"></i> Add Customer</button>
+                    <button class="occ-qa" data-qa="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
+                    <button class="occ-qa" data-qa="report"><i class="fas fa-file-pdf"></i> Report</button>
+                </div>
+            </div>
+
+            <div class="occ-stats-grid" id="occStatsGrid"></div>
+
+            <div class="occ-row">
+                <div class="occ-panel occ-panel-grow">
+                    <div class="occ-panel-head">
+                        <h3><i class="fas fa-chart-area"></i> Revenue & Orders (7 days)</h3>
+                    </div>
+                    <div class="occ-panel-body"><canvas id="chartRevenue"></canvas></div>
+                </div>
+                <div class="occ-panel">
+                    <div class="occ-panel-head"><h3><i class="fas fa-chart-pie"></i> Order Status</h3></div>
+                    <div class="occ-panel-body"><canvas id="chartStatus"></canvas></div>
+                </div>
+            </div>
+
+            <div class="occ-row occ-row-3">
+                <div class="occ-panel">
+                    <div class="occ-panel-head"><h3><i class="fas fa-bolt"></i> Smart Alerts</h3></div>
+                    <div class="occ-panel-body" id="occSmartAlerts"><div class="occ-empty">No active alerts.</div></div>
+                </div>
+                <div class="occ-panel">
+                    <div class="occ-panel-head"><h3><i class="fas fa-trophy"></i> Top Riders</h3></div>
+                    <div class="occ-panel-body" id="occTopRiders"></div>
+                </div>
+                <div class="occ-panel">
+                    <div class="occ-panel-head"><h3><i class="fas fa-fire"></i> Popular Items</h3></div>
+                    <div class="occ-panel-body" id="occTopItems"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== LIVE ORDERS ===== -->
+        <section class="occ-view" id="view-orders">
+            <div class="occ-view-head">
+                <div><h1>Live Order Monitor</h1><p>Every active and historical order.</p></div>
+                <div class="occ-filters">
+                    <input type="text" id="orderFilterText" placeholder="Filter by # / customer…"/>
+                    <select id="orderFilterStatus">
+                        <option value="all">All statuses</option>
+                        <option value="Order Received">Order Received</option>
+                        <option value="Preparing">Preparing</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Paused">Paused</option>
+                    </select>
+                </div>
+            </div>
+            <div class="occ-orders-grid" id="occOrdersGrid"></div>
+        </section>
+
+        <!-- ===== MAP ===== -->
+        <section class="occ-view" id="view-map">
+            <div class="occ-view-head">
+                <div><h1>Live Delivery Map</h1><p>Rider, pickup and delivery locations in real time.</p></div>
+                <div class="occ-legend">
+                    <span><i class="occ-map-dot" style="background:#27ae60"></i> Available</span>
+                    <span><i class="occ-map-dot" style="background:#2e86de"></i> Delivering</span>
+                    <span><i class="occ-map-dot" style="background:#f39c12"></i> Waiting</span>
+                    <span><i class="occ-map-dot" style="background:#e74c3c"></i> Offline</span>
+                </div>
+            </div>
+            <div class="occ-map-wrap">
+                <div id="occMap"></div>
+                <div class="occ-map-side" id="occMapSide"></div>
+            </div>
+        </section>
+
+        <!-- ===== RIDERS ===== -->
+        <section class="occ-view" id="view-riders">
+            <div class="occ-view-head">
+                <div><h1>Rider Control Panel</h1><p>Live fleet management.</p></div>
+            </div>
+            <div class="occ-riders-grid" id="occRidersGrid"></div>
+        </section>
+
+        <!-- ===== RESERVATIONS ===== -->
+        <section class="occ-view" id="view-reservations">
+            <div class="occ-view-head">
+                <div><h1>Reservation Center</h1><p>Booking management.</p></div>
+                <div class="occ-filters">
+                    <input type="text" id="resvFilterText" placeholder="Search guest / email…"/>
+                    <select id="resvFilterStatus">
+                        <option value="all">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="declined">Declined</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button class="occ-btn occ-btn-soft" id="resvExportBtn"><i class="fas fa-download"></i> Export</button>
+                </div>
+            </div>
+            <div class="occ-resv-calendar" id="occResvCalendar"></div>
+            <div class="occ-panel" style="margin-top:18px;">
+                <div class="occ-panel-head"><h3><i class="fas fa-list"></i> All Reservations</h3></div>
+                <div class="occ-panel-body" style="padding:0;">
+                    <div class="occ-table-wrap"><table class="occ-table"><thead><tr>
+                        <th>Guest</th><th>Email</th><th>Guests</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th>
+                    </tr></thead><tbody id="occResvTable"></tbody></table></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ACTIVITY FEED ===== -->
+        <section class="occ-view" id="view-activity">
+            <div class="occ-view-head"><div><h1>Customer Activity Feed</h1><p>Live customer events.</p></div></div>
+            <div class="occ-feed" id="occActivityFeed"></div>
+        </section>
+
+        <!-- ===== NOTIFICATIONS ===== -->
+        <section class="occ-view" id="view-notifications">
+            <div class="occ-view-head">
+                <div><h1>Notification Center</h1><p>Live alerts and messages.</p></div>
+                <div class="occ-filters">
+                    <select id="notifFilter"><option value="all">All</option><option value="unread">Unread</option><option value="order">Orders</option><option value="reservation">Reservations</option><option value="payment">Payments</option><option value="rider">Riders</option><option value="system">System</option></select>
+                    <button class="occ-btn occ-btn-soft" id="notifMarkAll"><i class="fas fa-check-double"></i> Mark all read</button>
+                </div>
+            </div>
+            <div class="occ-notif-list" id="occNotifList"></div>
+        </section>
+
+        <!-- ===== ANALYTICS ===== -->
+        <section class="occ-view" id="view-analytics">
+            <div class="occ-view-head"><div><h1>Business Analytics</h1><p>Interactive charts.</p></div></div>
+            <div class="occ-row">
+                <div class="occ-panel occ-panel-grow"><div class="occ-panel-head"><h3>Orders Per Hour</h3></div><div class="occ-panel-body"><canvas id="chartHours"></canvas></div></div>
+                <div class="occ-panel"><div class="occ-panel-head"><h3>Revenue Per Month</h3></div><div class="occ-panel-body"><canvas id="chartMonth"></canvas></div></div>
+            </div>
+            <div class="occ-row occ-row-3">
+                <div class="occ-panel"><div class="occ-panel-head"><h3>Top Customers</h3></div><div class="occ-panel-body" id="occTopCustomers"></div></div>
+                <div class="occ-panel"><div class="occ-panel-head"><h3>Busiest Areas</h3></div><div class="occ-panel-body" id="occTopAreas"></div></div>
+                <div class="occ-panel"><div class="occ-panel-head"><h3>Cancelled Orders</h3></div><div class="occ-panel-body"><canvas id="chartCancelled"></canvas></div></div>
+            </div>
+        </section>
+
+        <!-- ===== INSIGHTS ===== -->
+        <section class="occ-view" id="view-insights">
+            <div class="occ-view-head"><div><h1>Performance Insights</h1><p>Auto-calculated KPIs.</p></div></div>
+            <div class="occ-stats-grid" id="occInsightsGrid"></div>
+        </section>
+
+        <!-- ===== HEALTH ===== -->
+        <section class="occ-view" id="view-health">
+            <div class="occ-view-head"><div><h1>System Health Monitor</h1><p>Infrastructure status.</p></div>
+                <button class="occ-btn occ-btn-soft" id="occRefreshHealth"><i class="fas fa-sync"></i> Refresh</button></div>
+            <div class="occ-health-grid" id="occHealthGrid"></div>
+        </section>
+
+        <!-- ===== EXPORT ===== -->
+        <section class="occ-view" id="view-export">
+            <div class="occ-view-head"><div><h1>Export Center</h1><p>Download platform data.</p></div></div>
+            <div class="occ-export-grid" id="occExportGrid"></div>
+        </section>
+
+    </main>
+</div>
+
+<!-- ===== FLOATING QUICK ACTIONS ===== -->
+<div class="occ-fab" id="occFab"><i class="fas fa-plus"></i></div>
+<div class="occ-fab-menu" id="occFabMenu">
+    <button data-qa="order"><i class="fas fa-receipt"></i> Create Order</button>
+    <button data-qa="reservation"><i class="fas fa-calendar-plus"></i> Reservation</button>
+    <button data-qa="rider"><i class="fas fa-motorcycle"></i> Add Rider</button>
+    <button data-qa="customer"><i class="fas fa-user-plus"></i> Add Customer</button>
+    <button data-qa="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</button>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="occ-toasts" id="occToasts"></div>
+
+<!-- ===== MODALS ===== -->
+<div class="occ-modal-cvr" id="occModalCvr"></div>
+<div class="occ-modal" id="occModal">
+    <div class="occ-modal-head"><h3 id="occModalTitle">Modal</h3><button class="occ-modal-close" data-close="occModal"><i class="fas fa-times"></i></button></div>
+    <div class="occ-modal-body" id="occModalBody"></div>
+    <div class="occ-modal-foot" id="occModalFoot"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script type="module" src="../sarab/js/firebase-shared.js"></script>
+<script src="../server/public/rt-sync.js"></script>
+<script type="module" src="command-center.js"></script>
+</body>
+</html>

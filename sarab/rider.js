@@ -1,36 +1,12 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getAuth,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-    getFirestore,
-    collection,
-    doc,
-    setDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    getDocs,
-    getDoc,
-    query,
-    orderBy,
-    serverTimestamp,
-    onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDb7Sys_Mh_BLOr1YfB6Kug_9K6_IuLoqg",
-    authDomain: "fire-c1a91.firebaseapp.com",
-    projectId: "fire-c1a91",
-    storageBucket: "fire-c1a91.firebasestorage.app",
-    messagingSenderId: "757687516476",
-    appId: "1:757687516476:web:e41f779542e841d0ab3239"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    app, auth, db,
+    ADMIN_EMAIL, ADMIN_NAME, isAdmin,
+    ORDER_STATUS, ORDER_STATUS_ALT, ALL_STATUSES,
+    canTransition, normalizeStatus, deliveryStatusFor,
+    collection, doc, setDoc, addDoc, updateDoc, deleteDoc,
+    getDocs, getDoc, query, orderBy, serverTimestamp, onSnapshot,
+    notify, logActivity, saveOrder, updateOrder, pushStatusHistory
+} from './js/firebase-shared.js';
 
 var currentUser = null;
 var riderDoc = null;
@@ -66,10 +42,33 @@ onAuthStateChanged(auth, function(user) {
         }
 
         initRider();
+        connectRiderSync(user);
     }).catch(function() {
         window.location.href = '../sarab/index.html';
     });
 });
+
+/* Connect the rider to the real-time sync server for instant
+   assignment notifications and live GPS tracking. */
+function connectRiderSync(user) {
+    if (typeof RTSync === "undefined") return;
+    window.RTSync.connect({ uid: user.uid, email: user.email, role: "rider" });
+    RTSync.on("notification", function(n) {
+        if (!n) return;
+        showToast((n.title || "Notification") + (n.body ? ": " + n.body : ""), "info");
+    });
+    RTSync.on("order:assigned", function(o) {
+        if (o && o.riderUid === user.uid) {
+            showToast("New order assigned: #" + (o.id || ""), "success");
+            loadAvailableOrders();
+            loadMyDeliveries();
+        }
+    });
+    RTSync.on("order:status", function(p) {
+        if (p) { loadMyDeliveries(); loadAvailableOrders(); }
+    });
+    startLiveLocation();
+}
 
 function initRider() {
     setupNavigation();
@@ -325,7 +324,10 @@ function renderAvailableOrders(docs) {
 
     docs.forEach(function(d) {
         var o = d.data();
-        if (o.deliveryStatus !== 'pending' || o.riderId) return;
+        /* Show orders the rider can act on: unassigned+pending, or assigned to this rider. */
+        var actionable = (o.deliveryStatus === 'pending' && !o.riderId) ||
+                         (o.riderId === currentUser.uid && (o.deliveryStatus === 'assigned'));
+        if (!actionable) return;
         count++;
 
         var address = (o.address || '') + ', ' + (o.city || '') + ' ' + (o.zip || '');
@@ -334,6 +336,13 @@ function renderAvailableOrders(docs) {
             itemsStr = o.itemLines.slice(0, 2).join(', ') + (o.itemLines.length > 2 ? ' +' + (o.itemLines.length - 2) : '');
         }
 
+        var actionBtn;
+        if (o.riderId === currentUser.uid) {
+            actionBtn = '<button class="rider-btn rider-btn-success pickup-btn" data-id="' + d.id + '"><i class="fas fa-box me-1"></i>Picked Up</button>' +
+                        '<button class="rider-btn rider-btn-danger decline-order-btn" data-id="' + d.id + '"><i class="fas fa-times me-1"></i>Decline</button>';
+        } else {
+            actionBtn = '<button class="rider-btn rider-btn-primary accept-order-btn" data-id="' + d.id + '"><i class="fas fa-check me-1"></i>Accept</button>';
+        }
         tbody.innerHTML += '<tr>' +
             '<td><strong>#' + (o.id || d.id) + '</strong></td>' +
             '<td>' + (o.customer || 'Guest') + '<br/><small>' + (o.email || '') + '</small></td>' +
@@ -341,7 +350,7 @@ function renderAvailableOrders(docs) {
             '<td>' + itemsStr + '</td>' +
             '<td><strong>$' + (parseFloat(o.total) || 0).toFixed(2) + '</strong></td>' +
             '<td>' + (o.distance || '2.4 km') + '</td>' +
-            '<td><button class="rider-btn rider-btn-primary accept-order-btn" data-id="' + d.id + '"><i class="fas fa-check me-1"></i>Accept</button></td>' +
+            '<td>' + actionBtn + '</td>' +
             '</tr>';
     });
 
@@ -354,6 +363,35 @@ function renderAvailableOrders(docs) {
             acceptOrder(orderId);
         });
     });
+    document.querySelectorAll('.decline-order-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var orderId = this.getAttribute('data-id');
+            declineOrder(orderId);
+        });
+    });
+    document.querySelectorAll('.pickup-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var orderId = this.getAttribute('data-id');
+            updateOrderStatus(orderId, 'picked_up');
+        });
+    });
+}
+
+/* Mirror an order change to the customer's subcollection (real-time sync). */
+function mirrorOrderToCustomer(orderId, changes) {
+    getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+        if (!snap.exists()) return;
+        var uid = snap.data().uid;
+        if (!uid) return;
+        updateDoc(doc(db, 'users', uid, 'orders', orderId), changes).catch(function() {});
+    }).catch(function() {});
+}
+
+function notifyUser(uid, orderId, title, body) {
+    if (!uid) return;
+    addDoc(collection(db, 'users', uid, 'notifications'), {
+        type: 'order', title: title, body: body, orderId: orderId, createdAt: serverTimestamp(), read: false
+    }).catch(function() {});
 }
 
 function acceptOrder(orderId) {
@@ -374,14 +412,74 @@ function acceptOrder(orderId) {
         return updateDoc(orderRef, {
             riderId: currentUser.uid,
             riderName: riderDoc.name || currentUser.displayName || 'Rider',
+            riderPhone: riderDoc.phone || '',
+            riderVehicle: riderDoc.vehicle || '',
+            status: 'Rider Accepted',
             deliveryStatus: 'assigned',
             assignedAt: serverTimestamp()
+        }).then(function() {
+            /* Keep the customer's dashboard in sync in real time. */
+            mirrorOrderToCustomer(orderId, {
+                riderId: currentUser.uid,
+                riderName: riderDoc.name || currentUser.displayName || 'Rider',
+                riderPhone: riderDoc.phone || '',
+                riderVehicle: riderDoc.vehicle || '',
+                status: 'Rider Accepted',
+                deliveryStatus: 'assigned',
+                assignedAt: serverTimestamp()
+            });
+            /* Push through the real-time sync server so every dashboard
+               (customer + admin) updates instantly, no refresh. */
+            if (window.RTSync) window.RTSync.setStatus(orderId, 'Rider Accepted');
+            /* Notify the customer that the rider accepted the order. */
+            notifyUser(order.uid, orderId, 'Rider Accepted your order', riderDoc.name + ' has accepted order #' + orderId + ' and is preparing to pick it up.');
+            /* Notify admins via the global notifications collection. */
+            addDoc(collection(db, 'notifications'), {
+                type: 'order', title: 'Rider accepted #' + orderId, body: riderDoc.name + ' accepted the order.', orderId: orderId, createdAt: serverTimestamp(), read: false
+            }).catch(function() {});
+            showToast('Order accepted! Check My Deliveries.', 'success');
         });
-    }).then(function() {
-        showToast('Order accepted! Check My Deliveries.', 'success');
     }).catch(function(err) {
         showToast('Failed to accept order: ' + err.message, 'err');
     });
+}
+
+/* Rider declines an assigned order -> returns it to the admin queue. */
+function declineOrder(orderId) {
+    updateDoc(doc(db, 'orders', orderId), {
+        riderId: null,
+        riderName: null,
+        status: 'Returned',
+        deliveryStatus: 'pending'
+    }).then(function() {
+        mirrorOrderToCustomer(orderId, { riderId: null, riderName: null, status: 'Returned', deliveryStatus: 'pending' });
+        /* Real-time: immediately return the order to the admin queue and
+           notify the admin that a reassignment is needed. */
+        if (window.RTSync) window.RTSync.declineRider(orderId);
+        addDoc(collection(db, 'notifications'), {
+            type: 'order', title: 'Order returned #' + orderId, body: (riderDoc ? riderDoc.name : 'Rider') + ' declined the order. Reassign needed.', orderId: orderId, createdAt: serverTimestamp(), read: false
+        }).catch(function() {});
+        showToast('Order returned to admin queue', 'warn');
+        loadAvailableOrders();
+    }).catch(function(err) {
+        showToast('Failed to decline: ' + err.message, 'err');
+    });
+}
+
+/* Push the rider's live GPS location to the sync server so the
+   customer + admin tracking maps update in real time. */
+function startLiveLocation() {
+    if (!navigator.geolocation) return;
+    if (window.RTSync) {
+        navigator.geolocation.watchPosition(function(pos) {
+            window.RTSync.sendLocation(pos.coords.latitude, pos.coords.longitude);
+            if (riderDoc) {
+                updateDoc(doc(db, 'riders', riderDoc.id), {
+                    lat: pos.coords.latitude, lng: pos.coords.longitude, lastSeen: serverTimestamp()
+                }).catch(function() {});
+            }
+        }, function() {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 });
+    }
 }
 
 /* ============================================================
@@ -457,9 +555,22 @@ function renderMyDeliveries(docs) {
 }
 
 function updateOrderStatus(orderId, status) {
-    var orderRef = doc(db, 'orders', orderId);
-    updateDoc(orderRef, { deliveryStatus: status }).then(function() {
-        showToast('Order #' + orderId + ' updated to ' + status, 'success');
+    var nextStatus = status === 'picked_up' ? 'Picked Up' : (status === 'delivered' ? 'Delivered' : normalizeStatus(status));
+    var changes = { deliveryStatus: status, status: nextStatus };
+    if (status === 'delivered') changes.completedAt = serverTimestamp();
+    updateDoc(doc(db, 'orders', orderId), changes).then(function() {
+        mirrorOrderToCustomer(orderId, changes);
+        if (status === 'picked_up') {
+            getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+                if (snap.exists()) notifyUser(snap.data().uid, orderId, 'Out for delivery', 'Your order #' + orderId + ' is on the way!');
+            });
+        }
+        if (status === 'delivered') {
+            getDoc(doc(db, 'orders', orderId)).then(function(snap) {
+                if (snap.exists()) notifyUser(snap.data().uid, orderId, 'Order Delivered', 'Your order #' + orderId + ' has been delivered. Thank you!');
+            });
+        }
+        showToast('Order #' + orderId + ' updated to ' + nextStatus, 'success');
     }).catch(function(err) {
         showToast('Failed to update order: ' + err.message, 'err');
     });
