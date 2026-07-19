@@ -48,6 +48,7 @@ import {
 export const firebaseConfig = {
     apiKey: "AIzaSyDb7Sys_Mh_BLOr1YfB6Kug_9K6_IuLoqg",
     authDomain: "fire-c1a91.firebaseapp.com",
+    databaseURL: "https://fire-c1a91-default-rtdb.firebaseio.com",
     projectId: "fire-c1a91",
     storageBucket: "fire-c1a91.firebasestorage.app",
     messagingSenderId: "757687516476",
