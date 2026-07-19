@@ -2821,3 +2821,67 @@ window.addEventListener('appinstalled', function() {
     if (btn) btn.remove();
 });
 
+
+
+/* ============================================================
+   AI ASSISTANT CHAT WIDGET (Richy)
+   Talks to the backend proxy at /api/ai/chat (OpenAI key is server-side).
+   Point AI_API_BASE at your sync server if it is not same-origin.
+   ============================================================ */
+(function () {
+  var toggle = document.getElementById('aiToggle');
+  var panel = document.getElementById('aiPanel');
+  var closeBtn = document.getElementById('aiClose');
+  var form = document.getElementById('aiForm');
+  var input = document.getElementById('aiInput');
+  var msgs = document.getElementById('aiMessages');
+  var typing = document.getElementById('aiTyping');
+  if (!toggle || !panel || !form) return;
+
+  var AI_API = (window.AI_API_BASE || 'http://localhost:8080') + '/api/ai/chat';
+  var history = [];
+
+  function openPanel() { panel.style.display = 'flex'; input && input.focus(); }
+  function closePanel() { panel.style.display = 'none'; }
+
+  toggle.addEventListener('click', function () {
+    if (panel.style.display === 'none' || !panel.style.display) openPanel(); else closePanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', closePanel);
+
+  function addMsg(text, who) {
+    var d = document.createElement('div');
+    d.className = 'ai-msg ' + (who === 'user' ? 'ai-user' : 'ai-bot');
+    d.textContent = text;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+    return d;
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = (input.value || '').trim();
+    if (!text) return;
+    addMsg(text, 'user');
+    history.push({ role: 'user', content: text });
+    input.value = '';
+    if (typing) typing.style.display = 'flex';
+
+    fetch(AI_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history.slice(-12) })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (typing) typing.style.display = 'none';
+        var reply = (res.ok && res.d.reply) ? res.d.reply : (res.d.error || 'Sorry, I could not respond right now.');
+        addMsg(reply, 'bot');
+        history.push({ role: 'assistant', content: reply });
+      })
+      .catch(function () {
+        if (typing) typing.style.display = 'none';
+        addMsg('Network error — is the AI server running?', 'bot');
+      });
+  });
+})();

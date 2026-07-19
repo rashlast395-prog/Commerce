@@ -18,9 +18,13 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { fileURLToPath } from "url";
 import path from "path";
+import { config as loadEnv } from "dotenv";
 import {
   EVENTS, COMMANDS, canTransition, normalizeStatus, deliveryStatusFor
 } from "./shared/orderEngine.js";
+
+/* Load server-side config (incl. OPENAI_API_KEY) from .env when present. */
+try { loadEnv(); } catch (e) { /* .env optional */ }
 
 /* Alias for readability throughout the server. */
 const OrderEngine = { EVENTS, COMMANDS, canTransition, normalizeStatus, deliveryStatusFor };
@@ -96,15 +100,88 @@ async function persistNotification(n) {
 /* ============================================================
    WEBSOCKET SERVER
    ============================================================ */
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, orders: state.orders.size, clients: state.clients.size, firestore: USE_FIRESTORE }));
     return;
   }
+
+  /* ---- AI assistant chat (server-side OpenAI proxy) ----
+     The browser posts { messages: [{role, content}] } and we forward to
+     OpenAI using the server-side key. The key is NEVER exposed to clients. */
+  if (req.url === "/api/ai/chat" && req.method === "POST") {
+    await handleAiChat(req, res);
+    return;
+  }
+
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("Richy's Eat real-time sync server. Connect via WebSocket.\n");
 });
+
+/* Richy's Eat AI assistant — answers menu/questions and helps with orders.
+   Uses OpenAI Chat Completions. Key is read from OPENAI_API_KEY (server env). */
+const AI_SYSTEM_PROMPT = `You are "Richy", the friendly AI assistant for Richy's Eat, a fast-food restaurant in New York.
+You help customers with: menu questions, recommendations, ingredients, spice levels, prices, delivery times, reservations, and placing/customising orders.
+The menu includes: Smash Burgers, Margherita Royale pizza, Nashville Hot Chicken, Loaded Fajita Wraps, Nutella Lava Cake, Truffle Mushroom Pasta, plus combos and desserts.
+Be concise, warm, and on-brand. Prices are in USD. Free delivery over $30. Delivery in 25-35 min.
+If a customer wants to order, summarise their items, total estimate, and tell them to use the menu/cart. Never invent items not on the menu. Keep replies under 120 words.`;
+
+async function handleAiChat(req, res) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "AI not configured on server (OPENAI_API_KEY missing)." }));
+    return;
+  }
+  let body;
+  try {
+    const raw = await readBody(req);
+    body = JSON.parse(raw);
+  } catch (e) {
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Invalid request body." }));
+    return;
+  }
+  const history = Array.isArray(body.messages) ? body.messages : [];
+  const messages = [{ role: "system", content: AI_SYSTEM_PROMPT }, ...history];
+  try {
+    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages,
+        temperature: 0.6,
+        max_tokens: 300
+      })
+    });
+    const data = await upstream.json();
+    if (!upstream.ok) {
+      res.writeHead(upstream.status, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: data.error?.message || "OpenAI request failed." }));
+      return;
+    }
+    const reply = data.choices?.[0]?.message?.content || "";
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ reply }));
+  } catch (e) {
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Failed to reach AI service: " + e.message }));
+  }
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (c) => { data += c; if (data.length > 1e6) req.destroy(); });
+    req.on("end", () => resolve(data));
+    req.on("error", reject);
+  });
+}
 
 const wss = new WebSocketServer({ server });
 

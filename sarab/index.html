@@ -159,10 +159,34 @@
                <span class="ttag">Loaded Fries</span>
                <span class="ttag">Mango Shake</span>
             </div>
-         </div>
-      </div>
-      <!-- ============================================================
-         HERO
+          </div>
+       </div>
+
+       <!-- ============================================================
+          AI ASSISTANT CHAT WIDGET (Richy)
+          ============================================================ -->
+       <div id="aiWidget" class="ai-widget">
+          <button id="aiToggle" class="ai-fab" title="Chat with Richy, our AI assistant">
+             <i class="fas fa-robot"></i>
+          </button>
+          <div id="aiPanel" class="ai-panel" style="display:none;">
+             <div class="ai-head">
+                <div class="ai-title"><i class="fas fa-robot me-2"></i>Richy · AI Assistant</div>
+                <button id="aiClose" class="ai-close" title="Close"><i class="fas fa-times"></i></button>
+             </div>
+             <div id="aiMessages" class="ai-msgs">
+                <div class="ai-msg ai-bot">Hi! I'm Richy 👋 Ask me about our menu, recommendations, or help placing an order.</div>
+             </div>
+             <div id="aiTyping" class="ai-typing" style="display:none;"><span></span><span></span><span></span></div>
+             <form id="aiForm" class="ai-input">
+                <input type="text" id="aiInput" placeholder="Ask about burgers, deals, delivery..." autocomplete="off"/>
+                <button type="submit" title="Send"><i class="fas fa-paper-plane"></i></button>
+             </form>
+          </div>
+       </div>
+
+       <!-- ============================================================
+          HERO
          ============================================================ -->
       <section id="hero">
          <div class="hs hs1"></div>
