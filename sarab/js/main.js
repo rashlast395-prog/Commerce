@@ -2841,8 +2841,8 @@ window.addEventListener('appinstalled', function() {
 
   /* Flexible backend URL. Set window.AI_API_BASE before this script runs,
      otherwise fall back to the local sync server. */
-  var AI_API_BASE = window.AI_API_BASE || 'http://localhost:8080';
-  var AI_API = AI_API_BASE.replace(/\/+$/, '') + '/api/ai/chat';
+  const AI_API_BASE = window.AI_API_BASE || "http://localhost:8080";
+  const AI_API = AI_API_BASE.replace(/\/+$/, '') + "/api/ai/chat";
 
   /* Preserve chat history for the session. */
   var sessionId = 'web-' + Date.now();
@@ -2867,38 +2867,38 @@ window.addEventListener('appinstalled', function() {
   }
   function showTyping(on) { if (typing) typing.style.display = on ? 'flex' : 'none'; }
 
+  /* Ask the AI backend and return the reply text (or throw on error). */
+  async function askAI(message) {
+    const res = await fetch(AI_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: message, sessionId: sessionId })
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+    return data.reply || '';
+  }
+  window.askAI = askAI; /* exposed for reuse / debugging */
+
   function sendMessage(text) {
     if (busy) return;
-    text = text.trim();
+    text = (text || '').trim();
     if (!text) return;
     addMsg(text, 'user');
     input.value = '';
     showTyping(true);
     busy = true;
 
-    fetch(AI_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, sessionId: sessionId })
-    })
-      .then(function (r) {
-        return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
-      })
-      .then(function (res) {
+    askAI(text)
+      .then(function (reply) {
         showTyping(false);
         busy = false;
-        if (res.ok && res.d && res.d.reply) {
-          addMsg(res.d.reply, 'bot');
-        } else if (res.d && res.d.error) {
-          addMsg(res.d.error, 'bot');
-        } else {
-          addMsg('Sorry, I could not respond right now. Please try again.', 'bot');
-        }
+        addMsg(reply || 'Sorry, I could not respond right now.', 'bot');
       })
-      .catch(function () {
+      .catch(function (err) {
         showTyping(false);
         busy = false;
-        addMsg('AI is currently unavailable. Please check your connection or try again later.', 'bot');
+        addMsg(err && err.message ? err.message : 'AI is currently unavailable. Please try again later.', 'bot');
       });
   }
 

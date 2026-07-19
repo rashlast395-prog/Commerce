@@ -1,0 +1,5 @@
+# Environment variables (secrets — never commit)
+.env
+.env.local
+.env.development
+.env.production

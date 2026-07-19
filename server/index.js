@@ -19,6 +19,7 @@ import { WebSocketServer } from "ws";
 import { fileURLToPath } from "url";
 import path from "path";
 import { config as loadEnv } from "dotenv";
+import OpenAI from "openai";
 import {
   EVENTS, COMMANDS, canTransition, normalizeStatus, deliveryStatusFor
 } from "./shared/orderEngine.js";
@@ -158,25 +159,21 @@ const server = http.createServer(async (req, res) => {
 
 /* Richy's Eat AI assistant — restaurant virtual assistant.
    Uses OpenAI Chat Completions. Key is read from OPENAI_API_KEY (server env). */
-const AI_SYSTEM_PROMPT = `You are Richy's Eat AI Assistant. Help customers with food ordering, menu questions, recommendations, reservations, delivery information, and customer support.
+const AI_SYSTEM_PROMPT = `You are Richy's Eat AI Assistant.
 
-Be friendly, professional, and concise.
+Help customers with:
+- menu questions
+- food recommendations
+- ordering
+- delivery information
+- reservations
+- customer support
 
-You can help customers:
-- Choose meals
-- Recommend food based on budget and preferences
-- Explain menu items
-- Answer delivery questions
-- Guide customers through ordering
+Be friendly, professional and concise.
 
-Always encourage customers to complete their order when appropriate.
+Recommend Richy's Eat products when appropriate.
 
-Context you may be asked about (do not invent data you don't have):
-- menu / products: burgers, pizza, chicken, wraps, pasta, desserts, combos
-- orders: customers can ask "where is my order?"
-- customers and reservations: booking a table
-
-If you do not know a specific live detail (e.g. an exact order status), say so and offer to connect them with support.`;
+If customers ask about orders, request their order ID if needed.`;
 
 /* Per-session conversation memory keyed by an optional client id sent in the
    body. Keeps chat history during the session. Firebase-ready: swap this Map
@@ -224,30 +221,21 @@ async function handleAiChat(req, res) {
   const messages = [{ role: "system", content: AI_SYSTEM_PROMPT }, ...history];
 
   try {
-    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-        messages,
-        temperature: 0.6,
-        max_tokens: 350
-      })
+    const openai = new OpenAI({ apiKey: apiKey });
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages,
+      temperature: 0.6,
+      max_tokens: 350
     });
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      sendJson(res, upstream.status, { error: data?.error?.message || "AI provider request failed." });
-      return;
-    }
-    const reply = data?.choices?.[0]?.message?.content || "";
+    const reply = completion.choices?.[0]?.message?.content || "";
     history.push({ role: "assistant", content: reply });
     chatSessions.set(sessionId, history);
     sendJson(res, 200, { reply });
   } catch (e) {
-    sendJson(res, 502, { error: "Failed to reach the AI service. Please try again later." });
+    const status = (e && e.status) || 502;
+    const msg = (e && e.error && e.error.message) || "Failed to reach the AI service. Please try again later.";
+    sendJson(res, status, { error: msg });
   }
 }
 
@@ -609,5 +597,6 @@ async function resolveRider(riderId) {
 hydrateFromFirestore().then(() => {
   server.listen(PORT, () => {
     console.log(`[sync] real-time server listening on :${PORT} (firestore=${USE_FIRESTORE})`);
+    console.log(`AI Server running on port ${PORT}`);
   });
 });
