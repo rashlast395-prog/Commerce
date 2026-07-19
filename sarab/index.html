@@ -8,28 +8,19 @@
        <meta name="description" content="Richy's Eat - Order delicious fast food online. Burgers, pizza, chicken, wraps and more with fast delivery.">
        <meta name="keywords" content="food, restaurant, fast food, burgers, pizza, delivery, order online">
        <link rel="manifest" href="manifest.json">
-       <meta name="theme-color" content="#e8281a">
-       <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="#e8281a">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
        <meta name="apple-mobile-web-app-title" content="Richy's Eat">
        <link rel="icon" type="image/svg+xml" sizes="32x32" href="img/favicon-32x32.svg">
        <link rel="icon" type="image/svg+xml" sizes="16x16" href="img/favicon-16x16.svg">
        <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.svg">
        <link rel="mask-icon" href="img/safari-pinned-tab.svg" color="#e8281a">
-       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
-      <!-- Bootstrap 5.3 -->
-      <link href="css/bootstrap.min.css" rel="stylesheet"/>
-      <!-- AOS Animate on Scroll -->
-      <link href="css/aos.css" rel="stylesheet"/>
-      <!-- Swiper -->
-      <link href="css/swiper-bundle.min.css" rel="stylesheet"/>
-      <!-- all min css -->
-      <link rel="stylesheet" href="css/all.min.css"/>
-      <!-- magnific CSS -->
-      <link rel="stylesheet" href="css/magnific-popup.css"/>
-      <!-- Style CSS -->
-      <link rel="stylesheet" href="css/style.css" />
-   </head>
+        <link rel="preconnect" href="https://fonts.googleapis.com"/>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+    </head>
    <body>
       <!-- ============================================================
          TOP BAR
@@ -1492,7 +1483,7 @@
           </div>
            <div class="fbot">
               <div class="container">
-                 <p>&copy 2026 <span>Richy's Eat</span>. All Rights Reserved by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a>. Made with <span><i class="fas fa-heart"></i></span><br>Distributed by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a></p>
+                                   <p>&copy; 2026 <span>Richy's Eat</span>. All Rights Reserved by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a>. Made with <span><i class="fas fa-heart"></i></span><br>Distributed by <a target="_blank" class="mx-0 fw-bold text-success" href="https://github.com/rashlast395-prog">rashlast395-prog</a></p>
                  <div class="footer-links">
                     <a href="#">Privacy Policy</a>
                     <a href="#">Terms</a>
@@ -1617,7 +1608,7 @@
                      <label class="mobopt">
                         <input type="radio" name="mob" value="mpesa" checked/>
                         <div class="mobcard">
-                           <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/512px-M-PESA_LOGO-01.svg.png" alt="M-Pesa" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/>
+                           <img src="" alt="M-Pesa" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';" style="display:none;"/>
                            <div class="mobfall"><i class="fas fa-mobile-alt"></i>M-Pesa</div>
                         </div>
                      </label>
@@ -1945,12 +1936,14 @@
       <script src="js/swiper-bundle.min.js"></script>
       <!-- CounterUp -->
       <script src="js/jquery.magnific-popup.min.js"></script>
-        <!-- Firebase Shared (single source of truth) -->
-        <script type="module" src="js/firebase-shared.js"></script>
+         <!-- Global styles (imported via JS so Vite injects them correctly) -->
+         <script type="module" src="js/styles.js"></script>
+         <!-- Firebase Shared (single source of truth) -->
+         <script type="module" src="js/firebase-shared.js"></script>
         <!-- Firebase Auth (Sign In / Sign Up) -->
         <script type="module" src="js/firebase.js"></script>
         <!-- Real-time sync client (WebSocket + Firestore fallback) -->
-        <script src="../server/public/rt-sync.js"></script>
+        <script src="js/rt-sync.js"></script>
         <!-- Main js -->
         <script src="js/main.js"></script>
    </body>

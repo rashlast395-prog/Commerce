@@ -9,7 +9,7 @@ import {
     canTransition, normalizeStatus, deliveryStatusFor,
     collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
     query, orderBy, where, serverTimestamp,
-    notify, logActivity, saveOrder, updateOrder, pushStatusHistory
+    notify, logActivity, saveOrder, updateOrder, pushStatusHistory, setOrderStatus, ORDER_STATUS_LIST
 } from './js/firebase-shared.js';
 
 /* ===== helpers ===== */
@@ -476,19 +476,11 @@ function findOrderDoc(id){
 function updateOrderStatus(id, status){
     var o = findOrderDoc(id);
     if (!o){ return; }
-    var ref = doc(db, "orders", o._id);
-    var nextStatus = normalizeStatus(status);
-    if (!canTransition(normalizeStatus(o.status), nextStatus)) {
-        dbToast("Invalid status transition: " + o.status + " -> " + status, "err");
-        return;
-    }
-    var changes = { status: nextStatus, deliveryStatus: deliveryStatusFor(nextStatus) };
-    updateDoc(ref, changes).then(function(){
-        dbToast("Order "+id+" updated to "+nextStatus, "success");
+    setOrderStatus(o._id, status, { current: o.status }).then(function(changes){
+        dbToast("Order "+id+" updated to "+changes.status, "success");
         Object.assign(o, changes);
         renderOrders(); renderDashboard();
-    }).catch(function(){ dbToast("Update failed", "err"); });
-    if (window.RTSync) window.RTSync.setStatus(id, nextStatus);
+    }).catch(function(e){ dbToast(e.message || "Update failed", "err"); });
 }
 function acceptOrder(id){
     var o = findOrderDoc(id);
@@ -505,20 +497,15 @@ function acceptOrder(id){
         dbToast("You accepted order "+id, "success");
         loadOrders();
     }).catch(function(){ dbToast("Accept failed", "err"); });
-    if (window.RTSync) window.RTSync.setStatus(id, "Rider Accepted");
 }
 function riderAdvance(id, status){
     var o = findOrderDoc(id);
     if (!o){ return; }
-    var ref = doc(db, "orders", o._id);
     var nextStatus = status === "picked_up" ? "Picked Up" : (status === "delivered" ? "Delivered" : status);
-    var changes = { deliveryStatus: status, status: nextStatus };
-    if (status === "delivered") changes.completedAt = serverTimestamp();
-    updateDoc(ref, changes).then(function(){
+    setOrderStatus(o._id, nextStatus, { current: o.status }).then(function(){
         dbToast("Order "+id+" marked "+status, "success");
         loadOrders();
-    }).catch(function(){ dbToast("Update failed", "err"); });
-    if (window.RTSync) window.RTSync.setStatus(id, nextStatus);
+    }).catch(function(e){ dbToast(e.message || "Update failed", "err"); });
 }
 
 /* ============================================================

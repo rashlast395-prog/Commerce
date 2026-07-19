@@ -1,4 +1,4 @@
-const CACHE_NAME = 'richyeat-v1';
+const CACHE_NAME = 'richyeat-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -36,13 +36,21 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  /* Network-first: always try the live server (Vite) first so edits show
+     immediately, then fall back to cache when offline. */
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then(function(response) {
-        if (response) {
-          return response;
+        /* Cache a copy of successful GET responses for offline use */
+        if (event.request.method === 'GET' && response && response.status === 200 && response.type === 'basic') {
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, copy); });
         }
-        return fetch(event.request).catch(function() {
+        return response;
+      })
+      .catch(function() {
+        return caches.match(event.request).then(function(cached) {
+          if (cached) return cached;
           if (event.request.destination === 'document') {
             return caches.match('./offline.html');
           }

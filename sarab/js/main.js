@@ -1,13 +1,19 @@
-AOS.init({
-    duration: 680,
-    once: true,
-    offset: 55
-});
+try {
+    AOS.init({
+        duration: 680,
+        once: true,
+        offset: 55
+    });
+} catch (e) {
+    console.warn('[main] AOS init failed (non-fatal):', e);
+}
 
 /* NAVBAR SCROLL & ACTIVE LINK  */
 window.addEventListener('scroll', function() {
-    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 60);
-    document.getElementById('btt').classList.toggle('show', window.scrollY > 300);
+    var nav = document.getElementById('nav');
+    if (nav) nav.classList.toggle('scrolled', window.scrollY > 60);
+    var btt = document.getElementById('btt');
+    if (btt) btt.classList.toggle('show', window.scrollY > 300);
     document.querySelectorAll('section[id]').forEach(function(sec) {
         var top = sec.offsetTop - 110,
             bot = top + sec.offsetHeight;
@@ -441,14 +447,22 @@ document.getElementById('resetForm').addEventListener('submit', function(e) {
 function socialLogin(provider, btn, label) {
     if (!window.YussifAuth) { showToast('Firebase is not configured', 'err'); return; }
     if (location.protocol === 'file:') {
+        var tip = 'Run a local server, e.g. "npx serve" or "python -m http.server" in the sarab folder, then open http://localhost:8000/index.html';
         showToast('Social sign-in needs http://localhost or https (not a file).', 'err');
-        authMsg('login', 'err', 'Serve the site over http://localhost or https to use ' + label + '.');
+        authMsg('login', 'err', tip);
         return;
     }
     var orig = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' + label + '...';
-    window.YussifAuth['loginWith' + provider]()
+    var p = window.YussifAuth['loginWith' + provider]();
+    if (!p || typeof p.catch !== 'function') {
+        authMsg('login', 'err', 'Firebase auth is still loading — please wait a second and try again.');
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        return;
+    }
+    p
         .then(function(user) {
             if (user) {
                 localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
@@ -1007,27 +1021,31 @@ document.addEventListener('keydown', function(e) {
 });
 
 
-new Swiper('.tesSwiper', {
-    slidesPerView: 1,
-    spaceBetween: 22,
-    loop: true,
-    autoplay: {
-        delay: 4000,
-        disableOnInteraction: false
-    },
-    pagination: {
-        el: '.swiper-pagination',
-        clickable: true
-    },
-    breakpoints: {
-        640: {
-            slidesPerView: 2
+try {
+    new Swiper('.tesSwiper', {
+        slidesPerView: 1,
+        spaceBetween: 22,
+        loop: true,
+        autoplay: {
+            delay: 4000,
+            disableOnInteraction: false
         },
-        1024: {
-            slidesPerView: 3
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 2
+            },
+            1024: {
+                slidesPerView: 3
+            }
         }
-    }
-});
+    });
+} catch (e) {
+    console.warn('[main] Swiper init failed (non-fatal):', e);
+}
 
 /* ============================================================
    RECENTLY VIEWED ITEMS

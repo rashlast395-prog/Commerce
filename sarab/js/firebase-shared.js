@@ -24,8 +24,7 @@ import {
     sendPasswordResetEmail,
     setPersistence,
     browserSessionPersistence,
-    browserLocalPersistence,
-    User
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     getFirestore,
@@ -70,14 +69,25 @@ setPersistence(auth, browserSessionPersistence).catch(function (err) {
     console.warn('[firebase-shared] Could not set auth persistence:', err);
 });
 
-/* Enable offline persistence for better reliability */
-enableIndexedDbPersistence(db).catch(function(err) {
-    if (err.code === 'failed-precondition') {
-        console.warn('[firebase-shared] Multiple tabs open, persistence can only be enabled in one tab at a time.');
-    } else if (err.code === 'unimplemented') {
-        console.warn('[firebase-shared] Browser does not support persistence.');
+/* Enable offline persistence for better reliability.
+   This must run before any other Firestore call. If Firestore was
+   already started (e.g. another module touched it first) it throws
+   synchronously, so we guard it and ignore the harmless race. */
+try {
+    enableIndexedDbPersistence(db).catch(function(err) {
+        if (err && err.code === 'failed-precondition') {
+            console.warn('[firebase-shared] Multiple tabs open, persistence can only be enabled in one tab at a time.');
+        } else if (err && err.code === 'unimplemented') {
+            console.warn('[firebase-shared] Browser does not support persistence.');
+        }
+    });
+} catch (err) {
+    /* Firestore already started before we could enable persistence —
+       ignore; offline cache simply won't be used this session. */
+    if (!(err && /already been started|persistence can no longer/i.test(err.message || ''))) {
+        console.warn('[firebase-shared] Could not enable persistence:', err);
     }
-});
+}
 
 /* Expose for WebSocket sync client and debugging */
 window.auth = auth;
@@ -348,8 +358,49 @@ export function updateOrder(orderId, changes) {
     return updateDoc(doc(db, "orders", orderId), changes).catch(function () {});
 }
 
+/* ============================================================
+   SINGLE SOURCE OF TRUTH — ORDER STATUS TRANSITIONS
+   ------------------------------------------------------------
+   Every dashboard and the rider app MUST change an order's status
+   through this one function. It:
+     1. Normalizes the status to the canonical vocabulary.
+     2. Validates the transition against the shared state machine
+        (TRANSITIONS in this module) so no writer can produce an
+        illegal/inconsistent status.
+     3. Writes ONCE to Firestore (the authoritative store).
+     4. Pushes the change to the optional WebSocket sync server
+        (RTSync) so other connected dashboards update instantly.
+        If the server is offline, Firestore onSnapshot listeners
+        on each page already keep everyone in sync — so the app
+        works as ONE system even with no WS server running.
+   ============================================================ */
+export function setOrderStatus(orderId, nextStatus, opts) {
+    opts = opts || {};
+    var from = normalizeStatus(opts.current || "");
+    var to = normalizeStatus(nextStatus);
+    if (!to) return Promise.reject(new Error("Invalid status: " + nextStatus));
+    if (from && !canTransition(from, to)) {
+        return Promise.reject(new Error("Invalid transition: " + from + " -> " + to));
+    }
+    var changes = { status: to, deliveryStatus: deliveryStatusFor(to) };
+    if (opts.assignedAt) changes.assignedAt = serverTimestamp();
+    if (opts.completedAt || to === "Delivered") changes.completedAt = serverTimestamp();
+
+    return updateDoc(doc(db, "orders", orderId), changes).then(function () {
+        try {
+            if (window.RTSync && typeof window.RTSync.setStatus === "function") {
+                window.RTSync.setStatus(orderId, to);
+            }
+        } catch (e) { /* WS is optional */ }
+        return changes;
+    }).catch(function (err) { throw err; });
+}
+
+/* Canonical status list for <select> dropdowns — shared by every UI. */
+export var ORDER_STATUS_LIST = Object.keys(ORDER_STATUS);
+
 export function pushStatusHistory(orderId, status, by) {
-    var entry = { status: status, at: serverTimestamp(), by: by || "system" };
+    var entry = { status: normalizeStatus(status), at: serverTimestamp(), by: by || "system" };
     return updateDoc(doc(db, "orders", orderId), { statusHistory: arrayUnionSafe(entry) }).catch(function () {});
 }
 
