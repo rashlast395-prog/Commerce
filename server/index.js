@@ -100,51 +100,129 @@ async function persistNotification(n) {
 /* ============================================================
    WEBSOCKET SERVER
    ============================================================ */
+/* ============================================================
+   CORS + SECURITY HELPERS
+   ============================================================ */
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5501,http://127.0.0.1:5501")
+  .split(",").map(s => s.trim()).filter(Boolean);
+
+function setCors(res, req) {
+  const origin = req.headers.origin;
+  if (!origin || ALLOWED_ORIGINS.includes(origin) || ALLOWED_ORIGINS.includes("*")) {
+    res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    res.setHeader("Access-Control-Max-Age", "86400");
+  }
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
+function sendJson(res, status, obj) {
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify(obj));
+}
+
+/* Simple in-memory rate limiter: 20 requests / 60s per IP. */
+const RATE_LIMIT = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 20);
+const RATE_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60000);
+const rateBuckets = new Map(); // ip -> { count, resetAt }
+function rateLimited(ip) {
+  const now = Date.now();
+  let b = rateBuckets.get(ip);
+  if (!b || now > b.resetAt) { b = { count: 0, resetAt: now + RATE_WINDOW_MS }; rateBuckets.set(ip, b); }
+  b.count++;
+  return b.count > RATE_LIMIT;
+}
+
 const server = http.createServer(async (req, res) => {
+  setCors(res, req);
+
+  /* Preflight */
+  if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+
   if (req.url === "/health") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ ok: true, orders: state.orders.size, clients: state.clients.size, firestore: USE_FIRESTORE }));
+    sendJson(res, 200, { ok: true, orders: state.orders.size, clients: state.clients.size, firestore: USE_FIRESTORE });
     return;
   }
 
   /* ---- AI assistant chat (server-side OpenAI proxy) ----
-     The browser posts { messages: [{role, content}] } and we forward to
-     OpenAI using the server-side key. The key is NEVER exposed to clients. */
+     Browser posts { message: "..." } -> we return { reply: "..." }.
+     The AI_API_KEY / OPENAI_API_KEY is server-side only and never sent to clients. */
   if (req.url === "/api/ai/chat" && req.method === "POST") {
     await handleAiChat(req, res);
     return;
   }
 
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Richy's Eat real-time sync server. Connect via WebSocket.\n");
+  sendJson(res, 200, { message: "Richy's Eat real-time sync server. Connect via WebSocket." });
 });
 
-/* Richy's Eat AI assistant — answers menu/questions and helps with orders.
+/* Richy's Eat AI assistant — restaurant virtual assistant.
    Uses OpenAI Chat Completions. Key is read from OPENAI_API_KEY (server env). */
-const AI_SYSTEM_PROMPT = `You are "Richy", the friendly AI assistant for Richy's Eat, a fast-food restaurant in New York.
-You help customers with: menu questions, recommendations, ingredients, spice levels, prices, delivery times, reservations, and placing/customising orders.
-The menu includes: Smash Burgers, Margherita Royale pizza, Nashville Hot Chicken, Loaded Fajita Wraps, Nutella Lava Cake, Truffle Mushroom Pasta, plus combos and desserts.
-Be concise, warm, and on-brand. Prices are in USD. Free delivery over $30. Delivery in 25-35 min.
-If a customer wants to order, summarise their items, total estimate, and tell them to use the menu/cart. Never invent items not on the menu. Keep replies under 120 words.`;
+const AI_SYSTEM_PROMPT = `You are Richy's Eat AI Assistant. Help customers with food ordering, menu questions, recommendations, reservations, delivery information, and customer support.
+
+Be friendly, professional, and concise.
+
+You can help customers:
+- Choose meals
+- Recommend food based on budget and preferences
+- Explain menu items
+- Answer delivery questions
+- Guide customers through ordering
+
+Always encourage customers to complete their order when appropriate.
+
+Context you may be asked about (do not invent data you don't have):
+- menu / products: burgers, pizza, chicken, wraps, pasta, desserts, combos
+- orders: customers can ask "where is my order?"
+- customers and reservations: booking a table
+
+If you do not know a specific live detail (e.g. an exact order status), say so and offer to connect them with support.`;
+
+/* Per-session conversation memory keyed by an optional client id sent in the
+   body. Keeps chat history during the session. Firebase-ready: swap this Map
+   for Firestore "customers/{uid}/chat" later without changing the API. */
+const chatSessions = new Map();
 
 async function handleAiChat(req, res) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "AI not configured on server (OPENAI_API_KEY missing)." }));
+  const clientIp = req.socket.remoteAddress || "unknown";
+  if (rateLimited(clientIp)) {
+    sendJson(res, 429, { error: "Too many requests. Please wait a moment and try again." });
     return;
   }
+
+  const apiKey = process.env.OPENAI_API_KEY || process.env.AI_API_KEY;
+  if (!apiKey) {
+    sendJson(res, 500, { error: "AI is not configured on the server." });
+    return;
+  }
+
   let body;
   try {
-    const raw = await readBody(req);
-    body = JSON.parse(raw);
+    body = JSON.parse(await readBody(req));
   } catch (e) {
-    res.writeHead(400, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Invalid request body." }));
+    sendJson(res, 400, { error: "Invalid request body. Expected JSON." });
     return;
   }
-  const history = Array.isArray(body.messages) ? body.messages : [];
+
+  /* ---- Input validation ---- */
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!message) {
+    sendJson(res, 400, { error: "Field 'message' is required and must be a non-empty string." });
+    return;
+  }
+  if (message.length > 2000) {
+    sendJson(res, 400, { error: "Message is too long (max 2000 characters)." });
+    return;
+  }
+
+  /* Session history (last 12 turns). sessionId is optional. */
+  const sessionId = typeof body.sessionId === "string" && body.sessionId ? body.sessionId : clientIp;
+  let history = chatSessions.get(sessionId) || [];
+  history.push({ role: "user", content: message });
+  if (history.length > 24) history = history.slice(-24);
+
   const messages = [{ role: "system", content: AI_SYSTEM_PROMPT }, ...history];
+
   try {
     const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -156,21 +234,20 @@ async function handleAiChat(req, res) {
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
         messages,
         temperature: 0.6,
-        max_tokens: 300
+        max_tokens: 350
       })
     });
     const data = await upstream.json();
     if (!upstream.ok) {
-      res.writeHead(upstream.status, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: data.error?.message || "OpenAI request failed." }));
+      sendJson(res, upstream.status, { error: data?.error?.message || "AI provider request failed." });
       return;
     }
-    const reply = data.choices?.[0]?.message?.content || "";
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ reply }));
+    const reply = data?.choices?.[0]?.message?.content || "";
+    history.push({ role: "assistant", content: reply });
+    chatSessions.set(sessionId, history);
+    sendJson(res, 200, { reply });
   } catch (e) {
-    res.writeHead(502, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Failed to reach AI service: " + e.message }));
+    sendJson(res, 502, { error: "Failed to reach the AI service. Please try again later." });
   }
 }
 

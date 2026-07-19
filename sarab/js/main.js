@@ -2825,8 +2825,9 @@ window.addEventListener('appinstalled', function() {
 
 /* ============================================================
    AI ASSISTANT CHAT WIDGET (Richy)
-   Talks to the backend proxy at /api/ai/chat (OpenAI key is server-side).
-   Point AI_API_BASE at your sync server if it is not same-origin.
+   Connects the existing chat widget to the backend AI endpoint:
+     POST {message} -> {reply}  at  <AI_API_BASE>/api/ai/chat
+   The AI key lives ONLY on the server; the frontend never sees it.
    ============================================================ */
 (function () {
   var toggle = document.getElementById('aiToggle');
@@ -2836,13 +2837,20 @@ window.addEventListener('appinstalled', function() {
   var input = document.getElementById('aiInput');
   var msgs = document.getElementById('aiMessages');
   var typing = document.getElementById('aiTyping');
-  if (!toggle || !panel || !form) return;
+  if (!toggle || !panel || !form || !input || !msgs) return;
 
-  var AI_API = (window.AI_API_BASE || 'http://localhost:8080') + '/api/ai/chat';
-  var history = [];
+  /* Flexible backend URL. Set window.AI_API_BASE before this script runs,
+     otherwise fall back to the local sync server. */
+  var AI_API_BASE = window.AI_API_BASE || 'http://localhost:8080';
+  var AI_API = AI_API_BASE.replace(/\/+$/, '') + '/api/ai/chat';
 
-  function openPanel() { panel.style.display = 'flex'; input && input.focus(); }
+  /* Preserve chat history for the session. */
+  var sessionId = 'web-' + Date.now();
+  var busy = false;
+
+  function openPanel() { panel.style.display = 'flex'; input.focus(); }
   function closePanel() { panel.style.display = 'none'; }
+  function scrollDown() { msgs.scrollTop = msgs.scrollHeight; }
 
   toggle.addEventListener('click', function () {
     if (panel.style.display === 'none' || !panel.style.display) openPanel(); else closePanel();
@@ -2854,34 +2862,49 @@ window.addEventListener('appinstalled', function() {
     d.className = 'ai-msg ' + (who === 'user' ? 'ai-user' : 'ai-bot');
     d.textContent = text;
     msgs.appendChild(d);
-    msgs.scrollTop = msgs.scrollHeight;
+    scrollDown();
     return d;
   }
+  function showTyping(on) { if (typing) typing.style.display = on ? 'flex' : 'none'; }
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    var text = (input.value || '').trim();
+  function sendMessage(text) {
+    if (busy) return;
+    text = text.trim();
     if (!text) return;
     addMsg(text, 'user');
-    history.push({ role: 'user', content: text });
     input.value = '';
-    if (typing) typing.style.display = 'flex';
+    showTyping(true);
+    busy = true;
 
     fetch(AI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history.slice(-12) })
+      body: JSON.stringify({ message: text, sessionId: sessionId })
     })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (r) {
+        return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+      })
       .then(function (res) {
-        if (typing) typing.style.display = 'none';
-        var reply = (res.ok && res.d.reply) ? res.d.reply : (res.d.error || 'Sorry, I could not respond right now.');
-        addMsg(reply, 'bot');
-        history.push({ role: 'assistant', content: reply });
+        showTyping(false);
+        busy = false;
+        if (res.ok && res.d && res.d.reply) {
+          addMsg(res.d.reply, 'bot');
+        } else if (res.d && res.d.error) {
+          addMsg(res.d.error, 'bot');
+        } else {
+          addMsg('Sorry, I could not respond right now. Please try again.', 'bot');
+        }
       })
       .catch(function () {
-        if (typing) typing.style.display = 'none';
-        addMsg('Network error — is the AI server running?', 'bot');
+        showTyping(false);
+        busy = false;
+        addMsg('AI is currently unavailable. Please check your connection or try again later.', 'bot');
       });
+  }
+
+  /* Submit (button or Enter key). */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    sendMessage(input.value);
   });
 })();
