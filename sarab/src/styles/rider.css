@@ -1,0 +1,180 @@
+/* ============================================================
+   RIDER STYLES
+   Modern rider dashboard styles
+   ============================================================ */
+
+@import '../styles/variables.css';
+@import '../styles/components.css';
+
+/* Rider Layout */
+.rider-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-gray-50);
+}
+
+.rider-sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #1a1f2e 0%, #2c3e50 100%);
+  color: var(--color-white);
+  padding: var(--spacing-6) 0;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: var(--z-sticky);
+  transition: transform var(--transition-base);
+}
+
+.rider-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: 0 var(--spacing-6);
+  margin-bottom: var(--spacing-8);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.rider-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-6);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rider-nav-item:hover,
+.rider-nav-item.active {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--color-primary);
+}
+
+.rider-main {
+  flex: 1;
+  margin-left: 260px;
+  padding: var(--spacing-6);
+}
+
+.rider-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-6);
+}
+
+.rider-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+/* Status Toggle */
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.status-toggle-btn {
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  background: var(--color-gray-300);
+  color: var(--color-gray-700);
+}
+
+.status-toggle-btn.available {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+
+.status-toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Delivery Cards */
+.delivery-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4) var(--spacing-6);
+  margin-bottom: var(--spacing-4);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+
+.delivery-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.delivery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-3);
+}
+
+.delivery-id {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+}
+
+.delivery-status {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.delivery-address {
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-2);
+}
+
+.delivery-items {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  margin-bottom: var(--spacing-3);
+}
+
+.delivery-actions {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rider-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .rider-sidebar.show {
+    transform: translateX(0);
+  }
+
+  .rider-main {
+    margin-left: 0;
+  }
+
+  .rider-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+  }
+}
