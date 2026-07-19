@@ -22,6 +22,9 @@ import {
     signInWithRedirect,
     getRedirectResult,
     sendPasswordResetEmail,
+    setPersistence,
+    browserSessionPersistence,
+    browserLocalPersistence,
     User
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
@@ -59,6 +62,13 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+/* Use session persistence so the user stays signed in across reloads,
+   but is signed out when the browser/tab closes. Change to
+   browserLocalPersistence for "remember me" behaviour. */
+setPersistence(auth, browserSessionPersistence).catch(function (err) {
+    console.warn('[firebase-shared] Could not set auth persistence:', err);
+});
 
 /* Enable offline persistence for better reliability */
 enableIndexedDbPersistence(db).catch(function(err) {
@@ -192,10 +202,28 @@ export function getUserRole(user) {
 /* ============================================================
    AUTH HELPERS
    ============================================================ */
+/* Reusable, fully-configured providers.
+   IMPORTANT: GithubAuthProvider does NOT support the Google-only
+   `prompt=select_account` custom parameter. Passing it to GitHub makes
+   Firebase throw auth/invalid-oauth-parameters and the login silently
+   fails. We therefore configure each provider with only valid parameters. */
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+export const githubProvider = new GithubAuthProvider();
+/* GitHub needs at least the read:user scope to return an email.
+   `repo` is optional but useful if you later read private repos. */
+githubProvider.addScope('read:user');
+githubProvider.addScope('user:email');
+
+/* Try a popup first; if the browser blocks popups, fall back to a
+   full-page redirect. We never re-throw auth/popup-closed-by-user so
+   the caller can show a friendly message instead of a crash. */
 export function socialSignIn(provider) {
     return signInWithPopup(auth, provider).catch(function(err) {
         if (err && (err.code === 'auth/popup-blocked' ||
                     err.code === 'auth/popup-closed-by-user' ||
+                    err.code === 'auth/operation-not-allowed' ||
                     err.code === 'auth/unauthorized-domain')) {
             return signInWithRedirect(auth, provider);
         }
@@ -235,15 +263,11 @@ export const YussifAuth = {
     },
 
     loginWithGoogle: function() {
-        var provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        return socialSignIn(provider);
+        return socialSignIn(googleProvider);
     },
 
     loginWithGithub: function() {
-        var provider = new GithubAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        return socialSignIn(provider);
+        return socialSignIn(githubProvider);
     },
 
     handleRedirect: function() {
@@ -504,6 +528,10 @@ export function firebaseErr(err) {
         case 'auth/unauthorized-domain': return 'Add this site domain to Firebase -> Authentication -> Authorized domains.';
         case 'auth/missing-email': return 'Please enter your email address.';
         case 'auth/user-disabled': return 'This account has been disabled. Contact support.';
+        case 'auth/invalid-oauth-parameters': return 'This social login method is misconfigured. Contact support.';
+        case 'auth/account-exists-with-different-credential': return 'An account already exists with this email using a different sign-in method. Try that method instead.';
+        case 'auth/cancelled-popup-request': return 'Sign-in was cancelled. Please try again.';
+        case 'auth/network-request-failed': return 'Network error. Check your connection and try again.';
         default: return (err && err.message) ? err.message : 'Something went wrong. Please try again.';
     }
 }

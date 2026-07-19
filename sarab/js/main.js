@@ -358,6 +358,10 @@ function firebaseErr(err) {
         case 'auth/unauthorized-domain': return 'Add this site domain to Firebase -> Authentication -> Authorized domains.';
         case 'auth/missing-email': return 'Please enter your email address.';
         case 'auth/user-disabled': return 'This account has been disabled. Contact support.';
+        case 'auth/invalid-oauth-parameters': return 'This social login method is misconfigured. Contact support.';
+        case 'auth/account-exists-with-different-credential': return 'An account already exists with this email using a different sign-in method. Try that method instead.';
+        case 'auth/cancelled-popup-request': return 'Sign-in was cancelled. Please try again.';
+        case 'auth/network-request-failed': return 'Network error. Check your connection and try again.';
         default: return (err && err.message) ? err.message : 'Something went wrong. Please try again.';
     }
 }
@@ -445,7 +449,14 @@ function socialLogin(provider, btn, label) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' + label + '...';
     window.YussifAuth['loginWith' + provider]()
-        .then(function() {
+        .then(function(user) {
+            if (user) {
+                localStorage.setItem(AUTH_USER_KEY, JSON.stringify({
+                    name: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+                    email: user.email || '',
+                    uid: user.uid
+                }));
+            }
             authMsg('login', 'ok', label + ' sign-in successful!');
             showToast('Welcome, ' + label + ' user!', 'success');
             setTimeout(closeAuth, 500);
